@@ -62,6 +62,7 @@ pub mod prelude {
     pub use crate::ops::{TensorExpr, TensorOp};
     pub use crate::specs::*;
     pub use crate::tensor::TensorBase;
+    pub use crate::types::*;
     pub use crate::utils::*;
     pub use crate::{
         ArcTensor, CowTensor, NdContainer, Tensor, TensorId, TensorView, TensorViewMut,

@@ -65,6 +65,18 @@ where
         &mut self.data
     }
 
+    pub fn detach(&self) -> crate::TensorView<'_, A, D>
+    where
+        S: Data,
+    {
+        TensorBase {
+            id: self.id,
+            ctx: self.ctx,
+            data: self.data.view(),
+            op: TensorOp::none(),
+        }
+    }
+
     pub fn dim(&self) -> D::Pattern {
         self.data.dim()
     }

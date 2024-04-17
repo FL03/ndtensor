@@ -6,6 +6,7 @@ pub use self::expr::*;
 
 pub(crate) mod expr;
 
+use core::ops::{Deref, DerefMut};
 use ndarray::*;
 
 pub type TOp<A, B> = TensorOp<OwnedArcRepr<A>, OwnedArcRepr<B>>;
@@ -157,6 +158,28 @@ where
 {
     fn default() -> Self {
         TensorOp(None)
+    }
+}
+
+impl<H, K> Deref for TensorOp<H, K>
+where
+    H: RawData,
+    K: RawData,
+{
+    type Target = Option<TensorExpr<H, K>>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl<H, K> DerefMut for TensorOp<H, K>
+where
+    H: RawData,
+    K: RawData,
+{
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
     }
 }
 

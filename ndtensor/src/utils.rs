@@ -42,14 +42,57 @@ type TopologicalSortResult<Node> = Result<Vec<Node>, TopoligicalSortError>;
 
 use crate::prelude::{TensorExpr, TensorId};
 use crate::TensorBase;
-use ndarray::{IxDyn, RawData};
+use ndarray::{RawData, RawDataClone};
 
-pub fn tensor_op_graph<A, S>(tensor: &TensorBase<S, IxDyn>, reverse: bool) -> Vec<&TensorBase<S>>
+pub(crate) fn walk<S>(
+    scope: TensorBase<S>,
+    nodes: Vec<TensorBase<S>>,
+    visited: &mut HashMap<TensorId, bool>,
+) -> (bool, Vec<TensorBase<S>>)
+where
+    S: RawData + RawDataClone,
+{
+    if let Some(&tg) = visited.get(&scope.id()) {
+        return (tg, nodes);
+    }
+    // track the gradient of the current node
+    let mut track = false;
+    // recursively call on the children nodes
+    let mut nodes = if scope.is_variable() {
+        // Do not call recursively on the "leaf" nodes.
+        track = true;
+        nodes
+    } else if let Some(op) = scope.op() {
+        match op {
+            TensorExpr::Binary { lhs, rhs, .. } => {
+                let (tg, nodes) = walk(*lhs.clone(), nodes, visited);
+                track |= tg;
+                let (tg, nodes) = walk(*rhs.clone(), nodes, visited);
+                track |= tg;
+                nodes
+            }
+            TensorExpr::Unary { recv, .. } => {
+                let (tg, nodes) = walk(*recv.clone(), nodes, visited);
+                track |= tg;
+                nodes
+            }
+            _ => nodes,
+        }
+    } else {
+        nodes
+    };
+    visited.insert(scope.id(), track);
+    if track {
+        nodes.push(scope);
+    }
+    (track, nodes)
+}
+
+pub fn tensor_op_graph<A, S>(tensor: &TensorBase<S>, reverse: bool) -> Vec<&TensorBase<S>>
 where
     S: Data<Elem = A>,
 {
-    // Here, the sorted nodes are passed as an owned value rather than as a mutable reference to workaround some lifetime limitations.
-    fn walk<'a, S1>(
+    fn walker<'a, S1>(
         scope: &'a TensorBase<S1>,
         nodes: Vec<&'a TensorBase<S1>>,
         visited: &mut HashMap<TensorId, bool>,
@@ -70,14 +113,14 @@ where
         } else if let Some(op) = scope.op() {
             match op {
                 TensorExpr::Binary { lhs, rhs, .. } => {
-                    let (tg, nodes) = walk(lhs.as_ref(), nodes, visited);
+                    let (tg, nodes) = walker(lhs.as_ref(), nodes, visited);
                     track |= tg;
-                    let (tg, nodes) = walk(rhs, nodes, visited);
+                    let (tg, nodes) = walker(rhs, nodes, visited);
                     track |= tg;
                     nodes
                 }
                 TensorExpr::Unary { recv, .. } => {
-                    let (tg, nodes) = walk(recv, nodes, visited);
+                    let (tg, nodes) = walker(recv, nodes, visited);
                     track |= tg;
                     nodes
                 }
@@ -92,8 +135,9 @@ where
         }
         (track, nodes)
     }
+
     // walk through the dag
-    let (_tg, mut nodes) = walk(tensor, Vec::new(), &mut HashMap::new());
+    let (_tg, mut nodes) = walker(tensor, Vec::new(), &mut HashMap::new());
     // reverse the nodes; if needed
     if reverse {
         nodes.reverse();

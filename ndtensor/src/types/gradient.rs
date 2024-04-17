@@ -47,15 +47,27 @@ where
         self.store.entry(key)
     }
 
-    pub fn get(&self, item: &TensorBase<S>) -> Option<&TensorBase<S>> {
-        self.store.get(&item.id())
+    pub fn get(&self, key: &TensorId) -> Option<&TensorBase<S>> {
+        self.store.get(key)
     }
 
     pub fn get_mut(&mut self, key: &TensorId) -> Option<&mut TensorBase<S>> {
         self.store.get_mut(key)
     }
 
-    pub fn insert(&mut self, tensor: TensorBase<S>) -> Option<TensorBase<S>> {
+    pub fn get_item(&self, item: &TensorBase<S>) -> Option<&TensorBase<S>> {
+        self.store.get(&item.id())
+    }
+
+    pub fn get_item_mut(&mut self, key: &TensorId) -> Option<&mut TensorBase<S>> {
+        self.store.get_mut(key)
+    }
+
+    pub fn insert(&mut self, key: TensorId, tensor: TensorBase<S>) -> Option<TensorBase<S>> {
+        self.store.insert(key, tensor)
+    }
+
+    pub fn insert_item(&mut self, tensor: TensorBase<S>) -> Option<TensorBase<S>> {
         self.store.insert(tensor.id(), tensor)
     }
 
@@ -90,6 +102,14 @@ where
         self.entry(tensor.id()).or_insert(tensor.default_like())
     }
 
+    pub fn or_insert_ones(&mut self, tensor: &TensorBase<S>) -> &mut TensorBase<S>
+    where
+        A: Clone + num::One,
+        S: DataOwned,
+    {
+        self.entry(tensor.id()).or_insert(tensor.ones_like())
+    }
+
     pub fn or_insert_zeros(&mut self, tensor: &TensorBase<S>) -> &mut TensorBase<S>
     where
         A: Clone + num::Zero,
@@ -98,8 +118,12 @@ where
         self.entry(tensor.id()).or_insert(tensor.zeros_like())
     }
 
-    pub fn remove(&mut self, tensor: &TensorBase<S>) -> Option<TensorBase<S>> {
-        self.store.remove(&tensor.id())
+    pub fn remove(&mut self, key: &TensorId) -> Option<TensorBase<S>> {
+        self.store.remove(key)
+    }
+
+    pub fn remove_item(&mut self, item: &TensorBase<S>) -> Option<TensorBase<S>> {
+        self.store.remove(&item.id())
     }
 
     pub fn values(&self) -> Values<'_, TensorId, TensorBase<S>> {
@@ -147,7 +171,7 @@ where
     S: RawData,
 {
     fn index_mut(&mut self, index: TensorId) -> &mut Self::Output {
-        self.get_mut(&index).unwrap()
+        self.get_item_mut(&index).unwrap()
     }
 }
 
