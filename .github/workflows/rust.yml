@@ -1,0 +1,79 @@
+name: Rust
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
+
+on:
+  pull_request:
+    branches: [ main ]
+  release:
+    types: [ created ]
+  repository_dispatch:
+    types: [ rust ]
+  schedule:
+    - cron: 30 21 * * 0 # Every Sunday at 9:30pm UTC
+  workflow_dispatch:
+
+jobs:
+  builder:
+
+    name: Build
+    strategy:
+      matrix:
+        platform: [ macos-latest, ubuntu-latest, windows-latest ]
+        toolchain: [ stable, nightly ]
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: setup (langspace)
+        run: |
+          rustup default ${{ matrix.toolchain }}
+          rustup update
+      - name: Build
+        if: matrix.toolchain == 'stable'
+        run: cargo build --all-features -r -v --workspace
+      - name: Build (nightly)
+        continue-on-error: true
+        if: matrix.toolchain == 'nightly'
+        run: cargo build --all-features -r -v --workspace
+      - name: Cache build
+        id: cache-build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target/release
+          key: ${{ matrix.toolchain }}-${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+  test:
+    name: Test
+    needs: [ builder ]
+    strategy:
+      matrix:
+        toolchain: [ stable, nightly ]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: setup (langspace)
+        run: |
+          rustup default ${{ matrix.toolchain }}
+          rustup update
+      - name: Test
+        run: cargo test --all-features -v --workspace
+  bench:
+    continue-on-error: true
+    name: Benchmark
+    needs: [ builder ]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: setup (langspace)
+        run: |
+          rustup default nightly
+          rustup update
+      - name: Bench
+        run: cargo bench --all --features full -v
