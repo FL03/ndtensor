@@ -126,11 +126,11 @@ where
 }
 
 impl<A, B> TensorOp<RawViewRepr<*const A>, RawViewRepr<*const B>> {
-    pub unsafe fn cast<C>(self) -> TensorOp<RawViewRepr<*const C>, RawViewRepr<*const C>> where {
+    pub unsafe fn cast<C>(self) -> TensorOp<RawViewRepr<*const C>, RawViewRepr<*const C>> {
         TensorOp(self.0.map(|expr| expr.cast()))
     }
 
-    pub unsafe fn deref_into_view<'a>(self) -> TensorOp<ViewRepr<&'a A>, ViewRepr<&'a B>> where {
+    pub unsafe fn deref_into_view<'a>(self) -> TensorOp<ViewRepr<&'a A>, ViewRepr<&'a B>> {
         TensorOp(self.0.map(|expr| expr.deref_into_view()))
     }
 }

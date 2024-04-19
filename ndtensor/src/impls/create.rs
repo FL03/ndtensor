@@ -5,7 +5,7 @@
 use crate::prelude::TensorError;
 use crate::TensorBase;
 use ndarray::*;
-use num::{Num, One, Zero};
+use num::{Num, NumCast, One, Zero};
 
 macro_rules! map_method {
     // ($method:ident) => {
@@ -200,7 +200,7 @@ where
 
 impl<A> One for crate::Tensor<A, Ix0>
 where
-    A: Clone + One + core::ops::Mul<Output = A>,
+    A: Clone + One + core::ops::Mul<Output = A> + NumCast,
 {
     fn one() -> Self {
         Self::from_scalar(A::one())
@@ -209,7 +209,7 @@ where
 
 impl<A> Zero for crate::Tensor<A, Ix0>
 where
-    A: Clone + Zero,
+    A: Clone + Zero + NumCast,
 {
     fn zero() -> Self {
         Self::from_scalar(A::zero())
@@ -222,7 +222,7 @@ where
 
 impl<A> Num for crate::Tensor<A, Ix0>
 where
-    A: Clone + Num,
+    A: Clone + Num + NumCast,
 {
     type FromStrRadixErr = A::FromStrRadixErr;
 

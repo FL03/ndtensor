@@ -145,6 +145,10 @@ where
         }
     }
 
+    pub fn is_scalar(&self) -> bool {
+        self.ndim() == 0
+    }
+
     pub fn is_variable(&self) -> bool {
         self.ctx().is_variable()
     }
@@ -275,6 +279,61 @@ where
     }
 }
 
+impl<A> crate::Tensor<A, Ix0> {
+    pub fn into_scalar(self) -> A {
+        self.data.into_scalar()
+    }
+}
+
+impl<A, S> TensorBase<S, Ix2>
+where
+    S: RawData<Elem = A>,
+{
+    pub fn column(&self, idx: Ix) -> crate::TensorView<'_, A, Ix1>
+    where
+        S: Data<Elem = A>,
+    {
+        let data = self.data.column(idx);
+        TensorBase::new(data, None, self.ctx.is_variable())
+    }
+
+    pub fn column_mut(&mut self, idx: Ix) -> crate::TensorViewMut<'_, A, Ix1>
+    where
+        S: DataMut<Elem = A>,
+    {
+        let data = self.data.column_mut(idx);
+        TensorBase::new(data, None, self.ctx.is_variable())
+    }
+
+    pub fn is_square(&self) -> bool {
+        self.data().is_square()
+    }
+
+    pub fn ncols(&self) -> usize {
+        self.data().ncols()
+    }
+
+    pub fn nrows(&self) -> usize {
+        self.data().nrows()
+    }
+
+    pub fn row(&self, idx: Ix) -> crate::TensorView<'_, A, Ix1>
+    where
+        S: Data<Elem = A>,
+    {
+        let data = self.data.row(idx);
+        TensorBase::new(data, None, self.ctx.is_variable())
+    }
+
+    pub fn row_mut(&mut self, idx: Ix) -> crate::TensorViewMut<'_, A, Ix1>
+    where
+        S: DataMut<Elem = A>,
+    {
+        let data = self.data.row_mut(idx);
+        TensorBase::new(data, None, self.ctx.is_variable())
+    }
+}
+
 impl<'a, A, D> crate::CowTensor<'a, A, D>
 where
     D: Dimension,
@@ -303,7 +362,7 @@ impl<A, D> crate::RawTensorView<A, D>
 where
     D: Dimension,
 {
-    pub unsafe fn cast<B>(self) -> crate::RawTensorView<B, D> where {
+    pub unsafe fn cast<B>(self) -> crate::RawTensorView<B, D> {
         TensorBase {
             id: self.id,
             ctx: self.ctx,
@@ -348,13 +407,11 @@ where
     S: RawDataClone,
 {
     fn clone(&self) -> Self {
-        let data = self.data.clone();
-        let op = self.op.clone();
         TensorBase {
             id: self.id,
             ctx: self.ctx,
-            data,
-            op,
+            data: self.data.clone(),
+            op: self.op.clone(),
         }
     }
 }

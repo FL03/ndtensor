@@ -4,7 +4,7 @@
 */
 use ndarray::{Array, Data, Dimension, IntoDimension};
 use num::Float;
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::collections::{HashMap, VecDeque};
 use std::hash::{DefaultHasher, Hash, Hasher};
 
 /// Hashes a dimension using the [DefaultHasher].

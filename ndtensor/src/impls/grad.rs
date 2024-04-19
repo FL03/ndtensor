@@ -2,15 +2,14 @@
     Appellation: grad <impls>
     Contrib: FL03 <jo3mccain@icloud.com>
 */
-use crate::prelude::{TensorError, TensorExpr, TensorGrad, TensorId};
+use crate::prelude::{TensorError, TensorExpr, TensorGrad};
 use crate::TensorBase;
 use acme::ops::{Arithmetic, BinaryOp, UnaryOp};
 use acme::prelude::Scalar;
-use ndarray::{Data, DataOwned, OwnedRepr, RawDataClone};
+use ndarray::Ix0;
+use ndarray::{Data, DataOwned, Dimension, OwnedRepr, RawDataClone, ScalarOperand};
 // use num::complex::ComplexFloat;
 use std::collections::HashMap;
-
-pub(crate) type Visited<K = TensorId> = HashMap<K, bool>;
 
 macro_rules! entry {
     ($ctx:expr, $entry:expr) => {
@@ -21,8 +20,9 @@ macro_rules! entry {
     };
 }
 
-impl<S> TensorBase<S>
+impl<S, D> TensorBase<S, D>
 where
+    D: Dimension,
     S: Data + RawDataClone,
 {
     /// toposort is a function which sorts the nodes of the op graph in topological order.
@@ -39,11 +39,14 @@ where
 
 impl<A, S> TensorBase<S>
 where
-    A: Scalar,
+    A: Scalar + ScalarOperand,
     S: Data<Elem = A> + DataOwned + RawDataClone,
 {
     /// grad is a function which computes the gradient of the tensor with respect to the input tensor.
-    pub fn grad(&self) -> Result<TensorGrad<OwnedRepr<A>>, TensorError> {
+    pub fn grad(&self) -> Result<TensorGrad<OwnedRepr<A>>, TensorError>
+    where
+        A: Scalar<Real = A>,
+    {
         // get the sorted nodes
         let sorted = self.toposort(true);
         // initialize a new gradient store
@@ -65,29 +68,96 @@ where
             if let Some(expr) = node.op() {
                 let expr = expr.to_owned();
                 match expr {
-                    TensorExpr::Binary { lhs, rhs, op } => match op {
-                        BinaryOp::Arithmetic(inner) => match inner {
-                            Arithmetic::Add(_) => {
-                                *entry!(store, lhs) += &grad;
-                                *entry!(store, rhs) += &grad;
+                    TensorExpr::Binary { lhs, rhs, op } => {
+                        if rhs.is_scalar() {
+                            let rhs = rhs.to_owned().into_dimensionality::<Ix0>().unwrap();
+                            let val = rhs.into_scalar();
+                            match op {
+                                BinaryOp::Arithmetic(inner) => match inner {
+                                    Arithmetic::Add(_) => {
+                                        *entry!(store, lhs) += &grad;
+                                    }
+                                    Arithmetic::Div(_) => {
+                                        *entry!(store, lhs) += &grad.div_scalar(val);
+                                    }
+                                    Arithmetic::Mul(_) => {
+                                        *entry!(store, lhs) += &grad.mul_scalar(val);
+                                    }
+                                    Arithmetic::Pow(_) => {
+                                        *entry!(store, lhs) += &grad.mul(
+                                            &lhs.powf(val - A::from(1).unwrap()).mul_scalar(val),
+                                        );
+                                    }
+                                    Arithmetic::Sub(_) => {
+                                        *entry!(store, lhs) += &grad;
+                                    }
+                                    _ => todo!(),
+                                },
+                                _ => todo!(),
                             }
-                            // Arithmetic::Div(_) => {
-                            //     *entry!(store, lhs) += grad.iter().zip(rhs.iter()).map(|(l, r)| l / r).collect();
-                            //     *entry!(store, rhs) -= &grad * &lhs / rhs.powi(2);
-                            // },
-                            // Arithmetic::Mul(_) => {
-                            //     *entry!(store, lhs) += &grad * &rhs;
-                            //     *entry!(store, rhs) += &grad * &lhs;
-                            // },
-                            // Arithmetic::Sub(_) => {
-                            //     *entry!(store, lhs) += &grad;
-                            //     *entry!(store, rhs) -= &grad;
-                            // },
-                            _ => todo!(),
-                        },
-                        _ => todo!(),
-                    },
+                        } else {
+                            match op {
+                                BinaryOp::Arithmetic(inner) => match inner {
+                                    Arithmetic::Add(_) => {
+                                        *entry!(store, lhs) += &grad;
+                                        *entry!(store, rhs) += &grad;
+                                    }
+                                    Arithmetic::Div(_) => {
+                                        *entry!(store, lhs) += &grad.div(&rhs);
+                                        *entry!(store, rhs) -= &grad.mul(&lhs.div(&rhs.powi(2)));
+                                    }
+                                    Arithmetic::Mul(_) => {
+                                        *entry!(store, lhs) += &grad.mul(&rhs);
+                                        *entry!(store, rhs) += &grad.mul(&lhs);
+                                    }
+                                    Arithmetic::Sub(_) => {
+                                        *entry!(store, lhs) += &grad;
+                                        *entry!(store, rhs) -= &grad;
+                                    }
+                                    _ => todo!(),
+                                },
+                                _ => todo!(),
+                            }
+                        }
+                    }
                     TensorExpr::Unary { recv, op } => match op {
+                        UnaryOp::Cos => {
+                            *entry!(store, recv) += &grad.mul(&recv.sin().neg());
+                        }
+                        UnaryOp::Cosh => {
+                            *entry!(store, recv) += &grad.mul(&recv.sinh());
+                        }
+                        UnaryOp::Exp => {
+                            *entry!(store, recv) += &grad.mul(&recv.exp());
+                        }
+                        UnaryOp::Ln => {
+                            *entry!(store, recv) += &grad.div(&recv);
+                        }
+                        UnaryOp::Neg => {
+                            *entry!(store, recv) -= &grad;
+                        }
+                        UnaryOp::Sin => {
+                            *entry!(store, recv) += &grad.mul(&recv.cos());
+                        }
+                        UnaryOp::Sinh => {
+                            *entry!(store, recv) += &grad.mul(&recv.cosh());
+                        }
+                        UnaryOp::Square => {
+                            *entry!(store, recv) +=
+                                &grad.mul(&recv.mul_scalar(A::from(2).unwrap()));
+                        }
+                        UnaryOp::Sqrt => {
+                            *entry!(store, recv) +=
+                                &grad.div(&recv.sqrt().mul_scalar(A::from(2).unwrap()));
+                        }
+                        UnaryOp::Tan => {
+                            *entry!(store, recv) +=
+                                &grad.mul(&recv.tan().powi(2).add_scalar(A::from(1).unwrap()));
+                        }
+                        UnaryOp::Tanh => {
+                            *entry!(store, recv) += &grad
+                                .mul(&recv.tanh().powi(2).neg().add_scalar(A::from(1).unwrap()));
+                        }
                         _ => todo!(),
                     },
                     _ => todo!(),

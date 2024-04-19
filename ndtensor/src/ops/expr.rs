@@ -169,7 +169,7 @@ where
 use ndarray::RawViewRepr;
 
 impl<A, B> TensorExpr<RawViewRepr<*const A>, RawViewRepr<*const B>> {
-    pub unsafe fn cast<C>(self) -> TensorExpr<RawViewRepr<*const C>, RawViewRepr<*const C>> where {
+    pub unsafe fn cast<C>(self) -> TensorExpr<RawViewRepr<*const C>, RawViewRepr<*const C>> {
         match self {
             TensorExpr::Binary { lhs, rhs, op } => TensorExpr::Binary {
                 lhs: lhs.cast().boxed(),
@@ -184,7 +184,7 @@ impl<A, B> TensorExpr<RawViewRepr<*const A>, RawViewRepr<*const B>> {
         }
     }
 
-    pub unsafe fn deref_into_view<'a>(self) -> TensorExpr<ViewRepr<&'a A>, ViewRepr<&'a B>> where {
+    pub unsafe fn deref_into_view<'a>(self) -> TensorExpr<ViewRepr<&'a A>, ViewRepr<&'a B>> {
         match self {
             TensorExpr::Binary { lhs, rhs, op } => TensorExpr::Binary {
                 lhs: lhs.deref_into_view().boxed(),
@@ -200,10 +200,10 @@ impl<A, B> TensorExpr<RawViewRepr<*const A>, RawViewRepr<*const B>> {
     }
 }
 
-impl<S1, S2> Clone for TensorExpr<S1, S2>
+impl<A, B, S1, S2> Clone for TensorExpr<S1, S2>
 where
-    S1: RawDataClone,
-    S2: RawDataClone,
+    S1: RawDataClone<Elem = A>,
+    S2: RawDataClone<Elem = B>,
 {
     fn clone(&self) -> Self {
         match self {
