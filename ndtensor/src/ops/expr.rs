@@ -16,7 +16,7 @@ pub enum ReshapeExpr<S>
 where
     S: RawData,
 {
-    Reshape(BoxTensor<S>, Vec<usize>),
+    Reshape(BoxTensor<S>),
     Transpose(BoxTensor<S>),
 }
 

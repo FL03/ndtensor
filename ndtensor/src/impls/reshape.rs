@@ -42,7 +42,7 @@ where
             id: self.id,
             ctx: self.ctx,
             data: self.data().t().to_owned(),
-            op: TensorExpr::transpose(Box::new(self.to_owned().into_dyn())).into(),
+            op: TensorExpr::transpose(self.to_owned().into_dyn().boxed()).into(),
         }
     }
 

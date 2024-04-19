@@ -2,7 +2,7 @@
     Appellation: grad <impls>
     Contrib: FL03 <jo3mccain@icloud.com>
 */
-use crate::prelude::{TensorError, TensorExpr, TensorGrad};
+use crate::prelude::{TensorError, TensorExpr, TensorGrad, TensorId};
 use crate::TensorBase;
 use acme::ops::{Arithmetic, BinaryOp, UnaryOp};
 use acme::prelude::Scalar;
@@ -12,7 +12,10 @@ use std::collections::HashMap;
 
 macro_rules! entry {
     ($ctx:expr, $entry:expr) => {
-        entry!($ctx, $entry, $entry.zeros_like())
+        entry!($ctx, $entry, zeros_like)
+    };
+    ($ctx:expr, $entry:expr, $call:ident) => {
+        entry!($ctx, $entry, $entry.$call())
     };
     ($ctx:expr, $entry:expr, $default:expr) => {
         $ctx.entry($entry.id()).or_insert($default)
@@ -36,8 +39,8 @@ where
         nodes
     }
 
-    /// grad is a function which computes the gradient of the tensor with respect to the input tensor.
-    pub fn grad(&self) -> Result<TensorGrad<OwnedRepr<A>>, TensorError>
+    /// [backward](TensorBase::backward) is a function which computes the gradient of the tensor with respect to each variable.
+    pub fn backward(&self) -> Result<TensorGrad<OwnedRepr<A>>, TensorError>
     where
         A: Scalar<Real = A>,
     {
@@ -159,5 +162,11 @@ where
             }
         }
         Ok(store)
+    }
+    /// Compute the gradient of the tensor w.r.t. a particular variable (tensor)
+    pub fn grad(&self, target: TensorId) -> Result<crate::Tensor<A>, TensorError> where A: Scalar<Real = A> {
+        let store = self.backward()?;
+        let grad = store.get(&target).expect("Gradient not found");
+        Ok(grad.to_owned())
     }
 }
