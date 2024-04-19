@@ -8,6 +8,7 @@ use crate::TensorBase;
 use acme::ops::{BinaryOp, UnaryOp};
 use nd::{Data, DataMut, DataOwned, OwnedArcRepr, OwnedRepr, ViewRepr};
 use nd::{RawData, RawDataClone, RawDataMut, RawViewRepr};
+use num::traits::{NumCast, ToPrimitive};
 
 pub type BoxTensor<S> = Box<TensorBase<S>>;
 
@@ -66,6 +67,10 @@ where
         recv: BoxTensor<S1>,
         op: UnaryOp,
     },
+    Matmul {
+        lhs: BoxTensor<S1>,
+        rhs: BoxTensor<S2>,
+    },
     Transpose(BoxTensor<S1>),
 }
 
@@ -86,14 +91,24 @@ where
         TensorExpr::Unary { recv, op }
     }
 
+    pub fn numcast<C>(&self) -> TensorExpr<OwnedRepr<C>, OwnedRepr<C>>
+    where
+        A: Clone + ToPrimitive,
+        B: Clone + ToPrimitive,
+        C: NumCast,
+        S1: Data,
+        S2: Data,
+    {
+        fwd_expr_call!(&self.numcast::<C>().boxed())
+    }
+
     map_views!(into_owned<OwnedRepr> where A: Clone, B: Clone, S1: DataOwned, S2: DataOwned);
     map_views!(into_shared<OwnedArcRepr> where S1: DataOwned, S2: DataOwned);
 
     map_views!(&to_owned<OwnedRepr> where A: Clone, B: Clone, S1: Data, S2: Data);
     map_views!(&to_shared<OwnedArcRepr> where A: Clone, B: Clone, S1: Data, S2: Data);
 
-    pub fn raw_view(&self) -> TensorExpr<RawViewRepr<*const A>, RawViewRepr<*const B>>
-    {
+    pub fn raw_view(&self) -> TensorExpr<RawViewRepr<*const A>, RawViewRepr<*const B>> {
         fwd_view_body!(&self, raw_view)
     }
 

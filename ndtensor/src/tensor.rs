@@ -195,6 +195,34 @@ where
         self.data().shape()
     }
 
+    pub fn slice<I>(&self, info: I) -> crate::TensorView<'_, A, I::OutDim>
+    where
+        I: SliceArg<D>,
+        S: Data,
+    {
+        let data = self.data().slice(info);
+        TensorBase {
+            id: self.id,
+            ctx: self.ctx,
+            data,
+            op: self.op.view(),
+        }
+    }
+
+    pub fn slice_mut<I>(&mut self, info: I) -> crate::TensorViewMut<'_, A, I::OutDim>
+    where
+        I: SliceArg<D>,
+        S: DataMut,
+    {
+        let data = self.data.slice_mut(info);
+        TensorBase {
+            id: self.id,
+            ctx: self.ctx,
+            data,
+            op: self.op.view_mut(),
+        }
+    }
+
     pub fn strides(&self) -> &[isize] {
         self.data().strides()
     }
@@ -321,18 +349,15 @@ where
 // }
 
 macro_rules! impl_fmt {
-    ($(($trait:ident, $($fmt:tt)*)),*) => {
-        impl_fmt!(@impl $(($trait, $($fmt)*)),*);
-    };
-    ($trait:ident, $($fmt:tt)*) => {
-        impl_fmt!(@impl $trait, $($fmt)*);
-    };
-    (@impl $(($trait:ident, $($fmt:tt)*)),*) => {
+    ($($trait:ident($($fmt:tt)*)),*) => {
         $(
-            impl_fmt!(@impl $trait, $($fmt)*);
+            impl_fmt!(@impl $trait($($fmt)*));
         )*
     };
-    (@impl $trait:ident, $($fmt:tt)*) => {
+    ($trait:ident($($fmt:tt)*)) => {
+        impl_fmt!(@impl $trait($($fmt)*));
+    };
+    (@impl $trait:ident($($fmt:tt)*)) => {
         impl<A, S, D> core::fmt::$trait for TensorBase<S, D>
         where
             A: core::fmt::$trait,
@@ -346,7 +371,7 @@ macro_rules! impl_fmt {
     };
 }
 
-impl_fmt!((Binary, "{:b}"), (Debug, "{:?}"), (Display, "{}"));
+impl_fmt!(Binary("{:b}"), Debug("{:?}"), Display("{}"));
 
 impl<A, S, D> PartialEq for TensorBase<S, D>
 where

@@ -59,6 +59,17 @@ where
         self.0.is_some()
     }
 
+    pub fn numcast<C>(&self) -> TensorOp<OwnedRepr<C>, OwnedRepr<C>>
+    where
+        A: Clone + num::ToPrimitive,
+        B: Clone + num::ToPrimitive,
+        C: num::NumCast,
+        S1: Data,
+        S2: Data,
+    {
+        TensorOp(self.0.as_ref().map(|expr| expr.numcast::<C>()))
+    }
+
     pub fn raw_view(&self) -> TensorOp<RawViewRepr<*const A>, RawViewRepr<*const B>> {
         TensorOp(self.0.as_ref().map(|expr| expr.raw_view()))
     }

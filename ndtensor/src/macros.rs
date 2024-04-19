@@ -40,6 +40,10 @@ macro_rules! fwd_expr_call {
                 recv: recv.$($rest)*,
                 op,
             },
+            $crate::ops::TensorExpr::Matmul { lhs, rhs } => $crate::ops::TensorExpr::Matmul {
+                lhs: lhs.$($rest)*,
+                rhs: rhs.$($rest)*,
+            },
             $crate::ops::TensorExpr::Transpose(recv) => $crate::ops::TensorExpr::Transpose(recv.$($rest)*),
         }
     };
@@ -54,72 +58,24 @@ macro_rules! fwd_expr_call {
                 recv: recv.$($rest)*,
                 op: *op,
             },
+            $crate::ops::TensorExpr::Matmul { lhs, rhs } => $crate::ops::TensorExpr::Matmul {
+                lhs: lhs.$($rest)*,
+                rhs: rhs.$($rest)*,
+            },
             $crate::ops::TensorExpr::Transpose(recv) => $crate::ops::TensorExpr::Transpose(recv.$($rest)*),
         }
     };
-    (&mut $self:ident.$($rest:tt)*) => {
-        match $self {
-            $crate::ops::TensorExpr::Binary { lhs, rhs, op } => $crate::ops::TensorExpr::Binary {
-                lhs: lhs.as_mut().$($rest)*,
-                rhs: rhs.as_mut().$($rest)*,
-                op: *op,
-            },
-            $crate::ops::TensorExpr::Unary { recv, op } => $crate::ops::TensorExpr::Unary {
-                recv: recv.as_mut().$($rest)*,
-                op: *op,
-            },
-            $crate::ops::TensorExpr::Transpose(recv) => $crate::ops::TensorExpr::Transpose(recv.as_mut().$($rest)*),
-        }
-    };
 }
+
 macro_rules! fwd_view_body {
     ($self:ident, $method:ident) => {
-        match $self {
-            $crate::ops::TensorExpr::Binary { lhs, rhs, op } => $crate::ops::TensorExpr::Binary {
-                lhs: lhs.$method().boxed(),
-                rhs: rhs.$method().boxed(),
-                op,
-            },
-            $crate::ops::TensorExpr::Unary { recv, op } => $crate::ops::TensorExpr::Unary {
-                recv: recv.$method().boxed(),
-                op,
-            },
-            $crate::ops::TensorExpr::Transpose(recv) => {
-                $crate::ops::TensorExpr::Transpose(recv.$method().boxed())
-            }
-        }
+        fwd_expr_call!($self.$method().boxed())
     };
     (&$self:ident, $method:ident) => {
-        match $self {
-            $crate::ops::TensorExpr::Binary { lhs, rhs, op } => $crate::ops::TensorExpr::Binary {
-                lhs: lhs.as_ref().$method().boxed(),
-                rhs: rhs.as_ref().$method().boxed(),
-                op: *op,
-            },
-            $crate::ops::TensorExpr::Unary { recv, op } => $crate::ops::TensorExpr::Unary {
-                recv: recv.as_ref().$method().boxed(),
-                op: *op,
-            },
-            $crate::ops::TensorExpr::Transpose(recv) => {
-                $crate::ops::TensorExpr::Transpose(recv.as_ref().$method().boxed())
-            }
-        }
+        fwd_expr_call!(&$self.as_ref().$method().boxed())
     };
     (&mut $self:ident, $method:ident) => {
-        match $self {
-            $crate::ops::TensorExpr::Binary { lhs, rhs, op } => $crate::ops::TensorExpr::Binary {
-                lhs: lhs.as_mut().$method().boxed(),
-                rhs: rhs.as_mut().$method().boxed(),
-                op: *op,
-            },
-            $crate::ops::TensorExpr::Unary { recv, op } => $crate::ops::TensorExpr::Unary {
-                recv: recv.as_mut().$method().boxed(),
-                op: *op,
-            },
-            $crate::ops::TensorExpr::Transpose(recv) => {
-                $crate::ops::TensorExpr::Transpose(recv.as_mut().$method().boxed())
-            }
-        }
+        fwd_expr_call!(&$self.as_mut().$method().boxed())
     };
 }
 

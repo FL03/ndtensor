@@ -18,10 +18,7 @@ macro_rules! unop {
     (@loop $method:ident) => {
         pub fn $method(&self) -> crate::Tensor<A, D> {
             let data = self.data().mapv(|x| x.$method());
-            let op = TensorExpr::Unary {
-                recv: Box::new(self.clone().into_dyn().into_owned()),
-                op: UnaryOp::$method(),
-            };
+            let op = TensorExpr::unary(self.to_owned().into_dyn().boxed(), UnaryOp::$method());
             new!(data, Some(op))
         }
     };
@@ -38,11 +35,11 @@ macro_rules! binop {
         pub fn $method(&self, other: &Self) -> crate::Tensor<A, D> {
             let data = self.data() $op other.data();
             let op = TensorExpr::binary(
-                self.clone().into_dyn().boxed(),
-                other.clone().into_dyn().boxed(),
+                self.to_owned().into_dyn().boxed(),
+                other.to_owned().into_dyn().boxed(),
                 BinaryOp::$method(),
             );
-            new!(data, Some(op.into_owned()))
+            new!(data, Some(op))
         }
     };
 }
@@ -122,7 +119,7 @@ where
         (sub_scalar, sub, -)
     );
 
-    unop!(cos, cosh, exp, ln, neg, sin, sinh, sqr, sqrt, tan, tanh);
+    unop!(cos, cosh, exp, ln, neg, recip, sin, sinh, sqr, sqrt, tan, tanh);
 }
 impl<A, S, D> TensorBase<S, D>
 where
@@ -241,8 +238,88 @@ macro_rules! impl_binary_op {
         )*
     };
     ($bound:ident, $call:ident) => {
+        impl_binary_op!(@arr $bound, $call);
+        impl_binary_op!(@tensor $bound, $call);
+    };
+    (@arr $bound:ident, $call:ident) => {
         // impl_binary_op!(alt: $bound, $call, $op);
 
+        impl<A, B, S1, S2, D1, D2> core::ops::$bound<ArrayBase<S2, D2>> for TensorBase<S1, D1>
+        where
+            ArrayBase<S1, D1>: core::ops::$bound<ArrayBase<S2, D2>, Output = ArrayBase<OwnedRepr<A>, <D1 as DimMax<D2>>::Output>>,
+            A: Clone + num::NumCast,
+            B: Clone + num::ToPrimitive,
+            D1: Dimension + DimMax<D2>,
+            D2: Dimension,
+            S1: DataOwned<Elem = A> + DataMut,
+            S2: DataOwned<Elem = B> + RawDataClone,
+
+        {
+            type Output = TensorBase<OwnedRepr<A>, <D1 as DimMax<D2>>::Output>;
+
+            fn $call(self, rhs: ArrayBase<S2, D2>) -> Self::Output {
+                let op = TensorExpr::binary(
+                    self.to_owned().into_dyn().boxed(),
+                    TensorBase::ndtensor(rhs.mapv(|x| A::from(x).unwrap())).boxed(),
+                    BinaryOp::$call(),
+                );
+                let data = core::ops::$bound::$call(self.data, rhs);
+
+                new!(data, Some(op))
+            }
+        }
+
+        impl<'a, A, B, S1, S2, D1, D2> core::ops::$bound<&'a ArrayBase<S2, D2>> for TensorBase<S1, D1>
+        where
+            ArrayBase<S1, D1>: core::ops::$bound<&'a ArrayBase<S2, D2>, Output = ArrayBase<OwnedRepr<A>, <D1 as DimMax<D2>>::Output>>,
+            A: Clone + num::NumCast,
+            B: Clone + num::ToPrimitive,
+            D1: Dimension + DimMax<D2>,
+            D2: Dimension,
+            S1: DataOwned<Elem = A> + DataMut,
+            S2: DataOwned<Elem = B> + RawDataClone,
+
+        {
+            type Output = TensorBase<OwnedRepr<A>, <D1 as DimMax<D2>>::Output>;
+
+            fn $call(self, rhs: &'a ArrayBase<S2, D2>) -> Self::Output {
+                let op = TensorExpr::binary(
+                    self.to_owned().into_dyn().boxed(),
+                    TensorBase::ndtensor(rhs.mapv(|x| A::from(x).unwrap())).boxed(),
+                    BinaryOp::$call(),
+                );
+                let data = core::ops::$bound::$call(self.data, rhs);
+
+                new!(data, Some(op))
+            }
+        }
+
+        impl<'a, A, B, S1, S2, D1, D2> core::ops::$bound<ArrayBase<S2, D2>> for &'a TensorBase<S1, D1>
+        where
+            &'a ArrayBase<S1, D1>: core::ops::$bound<ArrayBase<S2, D2>, Output = ArrayBase<OwnedRepr<A>, <D1 as DimMax<D2>>::Output>>,
+            A: Clone + num::NumCast,
+            B: Clone + num::ToPrimitive,
+            D1: Dimension + DimMax<D2>,
+            D2: Dimension,
+            S1: DataOwned<Elem = A> + DataMut,
+            S2: DataOwned<Elem = B> + RawDataClone,
+
+        {
+            type Output = TensorBase<OwnedRepr<A>, <D1 as DimMax<D2>>::Output>;
+
+            fn $call(self, rhs: ArrayBase<S2, D2>) -> Self::Output {
+                let op = TensorExpr::binary(
+                    self.to_owned().into_dyn().boxed(),
+                    TensorBase::ndtensor(rhs.mapv(|x| A::from(x).unwrap())).boxed(),
+                    BinaryOp::$call(),
+                );
+                let data = core::ops::$bound::$call(self.data(), rhs);
+
+                new!(data, Some(op))
+            }
+        }
+    };
+    (@tensor $bound:ident, $call:ident) => {
         impl<A, B, S1, S2, D1, D2> core::ops::$bound<TensorBase<S2, D2>> for TensorBase<S1, D1>
         where
             A: Clone + core::ops::$bound<B, Output = A> + num::NumCast,
@@ -250,19 +327,19 @@ macro_rules! impl_binary_op {
             D1: Dimension + DimMax<D2>,
             D2: Dimension,
             S1: DataOwned<Elem = A> + DataMut,
-            S2: DataOwned<Elem = B>,
+            S2: DataOwned<Elem = B> + RawDataClone,
 
         {
             type Output = TensorBase<OwnedRepr<A>, <D1 as DimMax<D2>>::Output>;
 
             fn $call(self, rhs: TensorBase<S2, D2>) -> Self::Output {
                 let data = core::ops::$bound::$call(self.data(), rhs.data());
-                let op = unsafe { TensorExpr::binary(
+                let op = TensorExpr::binary(
                     Box::new(self.into_dyn().into_owned()),
-                    Box::new(rhs.into_dyn().raw_view().cast::<A>().deref_into_view()),
+                    Box::new(rhs.numcast().into_dyn()),
                     BinaryOp::$call(),
-                )};
-                new!(data, Some(op.to_owned()))
+                );
+                new!(data, Some(op))
             }
         }
 
@@ -280,12 +357,12 @@ macro_rules! impl_binary_op {
 
             fn $call(self, rhs: TensorBase<S2, D2>) -> Self::Output {
                 let data = core::ops::$bound::$call(self.data(), rhs.data());
-                let op = unsafe { TensorExpr::binary(
+                let op = TensorExpr::binary(
                     Box::new(self.to_owned().into_dyn()),
-                    Box::new(rhs.into_dyn().raw_view().cast::<A>().deref_into_view()),
+                    Box::new(rhs.numcast().into_dyn()),
                     BinaryOp::$call(),
-                )};
-                new!(data, Some(op.to_owned()))
+                );
+                new!(data, Some(op))
             }
         }
 
@@ -303,12 +380,12 @@ macro_rules! impl_binary_op {
 
             fn $call(self, rhs: &'a TensorBase<S2, D2>) -> Self::Output {
                 let data = core::ops::$bound::$call(self.data(), rhs.data());
-                let op = unsafe { TensorExpr::binary(
+                let op = TensorExpr::binary(
                     Box::new(self.to_owned().into_dyn()),
-                    Box::new(rhs.to_dyn().raw_view().cast::<A>().deref_into_view()),
+                    Box::new(rhs.numcast().to_dyn()),
                     BinaryOp::$call(),
-                )};
-                new!(data, Some(op.to_owned()))
+                );
+                new!(data, Some(op))
             }
         }
 
@@ -326,12 +403,12 @@ macro_rules! impl_binary_op {
 
             fn $call(self, rhs: &'a TensorBase<S2, D2>) -> Self::Output {
                 let data = core::ops::$bound::$call(self.data(), rhs.data());
-                let op = unsafe { TensorExpr::binary(
+                let op = TensorExpr::binary(
                     Box::new(self.into_owned().into_dyn()),
-                    Box::new(rhs.to_dyn().raw_view().cast::<A>().deref_into_view()),
+                    Box::new(rhs.to_dyn().numcast()),
                     BinaryOp::$call(),
-                )};
-                new!(data, Some(op.to_owned()))
+                );
+                new!(data, Some(op))
             }
         }
     };

@@ -6,7 +6,7 @@ use crate::prelude::{TensorError, TensorExpr, TensorGrad};
 use crate::TensorBase;
 use acme::ops::{Arithmetic, BinaryOp, UnaryOp};
 use acme::prelude::Scalar;
-use nd::{Data, DataOwned, Dimension, OwnedRepr, RawDataClone, ScalarOperand};
+use nd::{Data, Dimension, OwnedRepr, RawDataClone, ScalarOperand};
 // use num::complex::ComplexFloat;
 use std::collections::HashMap;
 
@@ -19,10 +19,11 @@ macro_rules! entry {
     };
 }
 
-impl<S, D> TensorBase<S, D>
+impl<A, S, D> TensorBase<S, D>
 where
+    A: Scalar + ScalarOperand,
     D: Dimension,
-    S: Data + RawDataClone,
+    S: Data<Elem = A> + RawDataClone,
 {
     /// toposort is a function which sorts the nodes of the op graph in topological order.
     fn toposort(&self, reverse: bool) -> Vec<TensorBase<S>> {
@@ -34,13 +35,7 @@ where
         }
         nodes
     }
-}
 
-impl<A, S> TensorBase<S>
-where
-    A: Scalar + ScalarOperand,
-    S: Data<Elem = A> + DataOwned + RawDataClone,
-{
     /// grad is a function which computes the gradient of the tensor with respect to the input tensor.
     pub fn grad(&self) -> Result<TensorGrad<OwnedRepr<A>>, TensorError>
     where
@@ -51,7 +46,7 @@ where
         // initialize a new gradient store
         let mut store = TensorGrad::new();
         // insert the gradient w.r.t. the current node
-        store.or_insert_ones(&self.to_owned());
+        store.or_insert_ones(&self.to_owned().into_dyn());
 
         for node in sorted.iter() {
             if node.is_variable() {
@@ -151,7 +146,7 @@ where
                         }
                         UnaryOp::Tan => {
                             *entry!(store, recv) +=
-                                &grad.mul(&recv.tan().powi(2).add_scalar(A::from(1).unwrap()));
+                                &grad.mul(&recv.ones_like().div(&recv.cos().powi(2)));
                         }
                         UnaryOp::Tanh => {
                             *entry!(store, recv) += &grad

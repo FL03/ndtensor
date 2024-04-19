@@ -32,6 +32,7 @@ pub(crate) mod impls {
 
     pub mod views {
         pub mod dimensional;
+        pub mod numerical;
         pub mod owned;
         pub mod raw;
         pub mod view;

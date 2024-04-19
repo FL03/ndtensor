@@ -21,6 +21,7 @@ pub enum TensorError {
     Unknown(String),
 }
 
+#[cfg(feature = "std")]
 impl std::error::Error for TensorError {}
 
 impl From<&str> for TensorError {
