@@ -4,7 +4,7 @@
 */
 #![cfg(feature = "approx")]
 use crate::TensorBase;
-use ndarray::{ArrayBase, Data, Dimension};
+use nd::{ArrayBase, Data, Dimension};
 
 use approx::{AbsDiffEq, RelativeEq};
 

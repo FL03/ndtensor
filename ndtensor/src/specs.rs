@@ -5,7 +5,7 @@
 use crate::prelude::{ArrayBase, Dimension, IxDyn};
 use crate::Tensor;
 use acme::prelude::Scalar;
-use ndarray::{Ix0, RawData};
+use nd::{Ix0, RawData};
 use num::complex::ComplexFloat;
 
 pub trait NdTensor<S, D = IxDyn>

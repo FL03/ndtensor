@@ -58,8 +58,7 @@ fn test_sub() {
 
     assert_eq!(grad[a.id()], Tensor::<f64, Ix2>::ones(shape).into_dyn());
     assert_eq!(
-        grad[b.id()],
-        Tensor::<f64, Ix2>::ones(shape).into_dyn().neg()
+        grad[b.id()], b.ones_like().into_dyn().neg()
     );
 }
 

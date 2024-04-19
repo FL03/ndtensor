@@ -6,8 +6,7 @@ use crate::prelude::{TensorError, TensorExpr, TensorGrad};
 use crate::TensorBase;
 use acme::ops::{Arithmetic, BinaryOp, UnaryOp};
 use acme::prelude::Scalar;
-use ndarray::Ix0;
-use ndarray::{Data, DataOwned, Dimension, OwnedRepr, RawDataClone, ScalarOperand};
+use nd::{Data, DataOwned, Dimension, OwnedRepr, RawDataClone, ScalarOperand};
 // use num::complex::ComplexFloat;
 use std::collections::HashMap;
 
@@ -70,7 +69,7 @@ where
                 match expr {
                     TensorExpr::Binary { lhs, rhs, op } => {
                         if rhs.is_scalar() {
-                            let rhs = rhs.to_owned().into_dimensionality::<Ix0>().unwrap();
+                            let rhs = rhs.to_owned().into_dimensionality::<nd::Ix0>().unwrap();
                             let val = rhs.into_scalar();
                             match op {
                                 BinaryOp::Arithmetic(inner) => match inner {

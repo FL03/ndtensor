@@ -4,55 +4,8 @@
 */
 use crate::prelude::TensorError;
 use crate::TensorBase;
-use ndarray::*;
+use nd::*;
 use num::{Num, NumCast, One, Zero};
-
-macro_rules! map_method {
-    // ($method:ident) => {
-    //     pub fn $method(&self) -> Self {
-    //         new!(self.data.$method())
-    //     }
-    // };
-    (a $method:ident$($rest:tt),*) => {
-        map_method!(@impl $method$($rest)*);
-    };
-    ($method:ident($($field:ident:$ty:ty),*) where $($tb:ident: $($ext:ident)+),*) => {
-        map_method!(@impl $method($($field:$ty),*) where $($tb: $($ext)+),*);
-    };
-    ($method:ident($($field:ident:$ty:ty),*) where $($tb:ident: $($ext:ident)+),* $($rest:tt),*) => {
-        map_method!(@impl $method($($field:$ty),*) where $($tb: $($ext)+),*$($rest)*);
-    };
-    ($method:ident($($field:ident:$ty:ty),*) where $($tb:ident: $($ext:ident)+),* => $($res:ident),*) => {
-        map_method!(@impl $method($($field:$ty),*) where $($tb: $($ext)+),* => $($res:ident),*);
-    };
-    ($method:ident<$($t:ident),*>($($field:ident:$ty:ty),*) where $($tb:ident: $($ext:ident)++),*) => {
-        map_method!(@impl $method<$($t),*>($($field:$ty),*) where $($tb: $($ext)++),*);
-    };
-    (@impl $method:ident($($field:ident:$ty:ty),*) where $($tb:ident: $($ext:ident)+),* => $($res:ident),*) => {
-        pub fn $method($($field:$ty),*) -> Result<$res, TensorError>
-        where
-            $($tb: $($ext)++),*
-        {
-            new!(ArrayBase::$method($($field),*)?)
-        }
-    };
-    (@impl $method:ident($($field:ident:$ty:ty),*) where $($tb:ident: $($ext:ident)+),*) => {
-        pub fn $method($($field:$ty),*) -> Self
-        where
-            $($tb: $($ext)++),*
-        {
-            new!(ArrayBase::$method($($field),*))
-        }
-    };
-    (@impl $method:ident<$($t:ident),*>($($field:ident:$ty:ty),*) where $($tb:ident: $($ext:ident)++),*) => {
-        pub fn $method<$($t),*>($($field:$ty),*) -> Self
-        where
-            $($tb: $($ext)++),*
-        {
-            new!(self.data.$method($($field),*))
-        }
-    };
-}
 
 impl<A, S> TensorBase<S, ndarray::Ix0>
 where

@@ -5,20 +5,11 @@
 use crate::prelude::{TensorError, TensorExpr, TensorId, TensorOp};
 use crate::Context;
 use core::borrow::{Borrow, BorrowMut};
-use ndarray::*;
+use nd::*;
 
-pub(crate) fn new<S, D>(
-    data: ArrayBase<S, D>,
-    op: Option<TensorExpr<S>>,
-    kind: bool,
-) -> TensorBase<S, D>
-where
-    D: Dimension,
-    S: RawData,
-{
-    TensorBase::new(data, op, kind)
-}
-
+/// This is the base tensor object, providing additional functionality to the wrapped [ArrayBase](ndarray::ArrayBase).
+///
+///
 pub struct TensorBase<S, D = IxDyn>
 where
     D: Dimension,
@@ -276,108 +267,6 @@ where
     pub fn with_op(mut self, op: impl Into<TensorOp<S>>) -> Self {
         self.op = op.into();
         self
-    }
-}
-
-impl<A> crate::Tensor<A, Ix0> {
-    pub fn into_scalar(self) -> A {
-        self.data.into_scalar()
-    }
-}
-
-impl<A, S> TensorBase<S, Ix2>
-where
-    S: RawData<Elem = A>,
-{
-    pub fn column(&self, idx: Ix) -> crate::TensorView<'_, A, Ix1>
-    where
-        S: Data<Elem = A>,
-    {
-        let data = self.data.column(idx);
-        TensorBase::new(data, None, self.ctx.is_variable())
-    }
-
-    pub fn column_mut(&mut self, idx: Ix) -> crate::TensorViewMut<'_, A, Ix1>
-    where
-        S: DataMut<Elem = A>,
-    {
-        let data = self.data.column_mut(idx);
-        TensorBase::new(data, None, self.ctx.is_variable())
-    }
-
-    pub fn is_square(&self) -> bool {
-        self.data().is_square()
-    }
-
-    pub fn ncols(&self) -> usize {
-        self.data().ncols()
-    }
-
-    pub fn nrows(&self) -> usize {
-        self.data().nrows()
-    }
-
-    pub fn row(&self, idx: Ix) -> crate::TensorView<'_, A, Ix1>
-    where
-        S: Data<Elem = A>,
-    {
-        let data = self.data.row(idx);
-        TensorBase::new(data, None, self.ctx.is_variable())
-    }
-
-    pub fn row_mut(&mut self, idx: Ix) -> crate::TensorViewMut<'_, A, Ix1>
-    where
-        S: DataMut<Elem = A>,
-    {
-        let data = self.data.row_mut(idx);
-        TensorBase::new(data, None, self.ctx.is_variable())
-    }
-}
-
-impl<'a, A, D> crate::CowTensor<'a, A, D>
-where
-    D: Dimension,
-{
-    pub fn is_view(&self) -> bool {
-        self.data().is_view()
-    }
-}
-
-impl<'a, A, D> crate::TensorView<'a, A, D>
-where
-    D: Dimension,
-{
-    pub fn reborrow<'b>(&'b self) -> crate::TensorView<'b, A, D> {
-        // crate::TensorView {
-        //     id: self.id,
-        //     ctx: self.ctx,
-        //     data: self.data.reborrow(),
-        //     op: self.op.reborrow(),
-        // }
-        unimplemented!()
-    }
-}
-
-impl<A, D> crate::RawTensorView<A, D>
-where
-    D: Dimension,
-{
-    pub unsafe fn cast<B>(self) -> crate::RawTensorView<B, D> {
-        TensorBase {
-            id: self.id,
-            ctx: self.ctx,
-            data: self.data.cast::<B>(),
-            op: self.op.cast(),
-        }
-    }
-
-    pub unsafe fn deref_into_view<'a>(self) -> crate::TensorView<'a, A, D> {
-        TensorBase {
-            id: self.id,
-            ctx: self.ctx,
-            data: self.data.deref_into_view(),
-            op: self.op.deref_into_view(),
-        }
     }
 }
 

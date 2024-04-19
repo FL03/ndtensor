@@ -5,8 +5,8 @@
 use crate::prelude::{Dimension, TensorExpr};
 use crate::TensorBase;
 use acme::prelude::{BinaryOp, Scalar, UnaryOp};
-use ndarray::{ArrayBase, DimMax};
-use ndarray::{Data, DataMut, DataOwned, OwnedRepr, RawDataClone, ScalarOperand};
+use nd::{ArrayBase, DimMax};
+use nd::{Data, DataMut, DataOwned, OwnedRepr, RawDataClone, ScalarOperand};
 use num::complex::ComplexFloat;
 
 macro_rules! unop {
@@ -134,18 +134,18 @@ where
 }
 
 macro_rules! impl_unary_op {
-    ($(($($path:ident)::*, $tr:ident, $call:ident)),*) => {
+    ($(($($path:ident)::*, $call:ident)),*) => {
         $(
-            impl_unary_op!(@impl $($path)::*, $tr, $call);
+            impl_unary_op!(@impl $($path)::*, $call);
         )*
     };
-    ($($path:ident)::*, $tr:ident, $call:ident) => {
-        impl_unary_op!(@impl $($path)::*, $tr, $call);
+    ($($path:ident)::*, $call:ident) => {
+        impl_unary_op!(@impl $($path)::*, $call);
     };
-    (@impl $($path:ident)::*, $tr:ident, $call:ident) => {
-        impl<A, S, D> $($path)::*::$tr for TensorBase<S, D>
+    (@impl $($path:ident)::*, $call:ident) => {
+        impl<A, S, D> $($path)::* for TensorBase<S, D>
         where
-            A: Clone + $($path)::*::$tr<Output = A>,
+            A: Clone + $($path)::*<Output = A>,
             D: Dimension,
             S: Data<Elem = A> + DataOwned + RawDataClone,
         {
@@ -153,17 +153,17 @@ macro_rules! impl_unary_op {
 
             fn $call(self) -> Self::Output {
                 let data = self.data().mapv(|x| x.$call());
-                let op = TensorExpr::<S, S>::unary(
-                    self.clone().into_dyn().boxed(),
+                let op = TensorExpr::unary(
+                    self.into_dyn().into_owned().boxed(),
                     UnaryOp::$call(),
                 );
-                TensorBase::from_arr(data).with_op(op.into_owned())
+                TensorBase::from_arr(data).with_op(op)
             }
         }
 
-        impl<'a, A, S, D> $($path)::*::$tr for &'a TensorBase<S, D>
+        impl<'a, A, S, D> $($path)::* for &'a TensorBase<S, D>
         where
-            A: Clone + $($path)::*::$tr<Output = A>,
+            A: Clone + $($path)::*<Output = A>,
             D: Dimension,
             S: Data<Elem = A> + DataOwned + RawDataClone,
         {
@@ -171,11 +171,11 @@ macro_rules! impl_unary_op {
 
             fn $call(self) -> Self::Output {
                 let data = self.data().mapv(|x| x.$call());
-                let op = TensorExpr::<S, S>::unary(
-                    self.clone().into_dyn().boxed(),
+                let op = TensorExpr::unary(
+                    self.to_owned().into_dyn().boxed(),
                     UnaryOp::$call(),
                 );
-                TensorBase::from_arr(data).with_op(op.into_owned())
+                TensorBase::from_arr(data).with_op(op)
             }
         }
     };
@@ -347,4 +347,4 @@ impl_assign_op!(
     (SubAssign, sub, sub_assign)
 );
 
-impl_unary_op!((core::ops, Neg, neg), (core::ops, Not, not));
+impl_unary_op!((core::ops::Neg, neg), (core::ops::Not, not));

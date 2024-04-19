@@ -8,6 +8,7 @@
 #![crate_name = "ndtensor"]
 
 extern crate acme;
+extern crate ndarray as nd;
 
 pub use self::{context::Context, errors::*, specs::*, tensor::*, types::*, utils::*};
 
@@ -18,16 +19,23 @@ pub(crate) mod macros;
 pub(crate) mod specs;
 pub(crate) mod tensor;
 pub(crate) mod utils;
-
+#[macro_use]
 pub mod ops;
 
 pub(crate) mod impls {
     #[cfg(feature = "approx")]
-    pub(crate) mod approx;
-    pub(crate) mod create;
-    pub(crate) mod grad;
-    pub(crate) mod ops;
-    pub(crate) mod reshape;
+    pub mod approx;
+    pub mod create;
+    pub mod grad;
+    pub mod ops;
+    pub mod reshape;
+
+    pub mod views {
+        pub mod dimensional;
+        pub mod owned;
+        pub mod raw;
+        pub mod view;
+    }
 }
 
 pub(crate) mod types {

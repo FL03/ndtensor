@@ -16,7 +16,7 @@ fn test_addition() {
     let a = Tensor::<f64, Ix2>::linshape(shape.clone()).unwrap();
     let b = Tensor::<f64, Ix2>::ones(shape);
 
-    let res = &a + &b;
+    let res = a.add(&b);
 
     assert_eq!(res.data().sum(), 45f64);
 }
