@@ -7,9 +7,10 @@ pub use self::{expr::*, wrapper::TensorOp};
 pub(crate) mod expr;
 pub(crate) mod wrapper;
 
-use nd::*;
+use nd::{OwnedRepr, OwnedArcRepr, RawData};
 
-pub type TOp<A, B> = TensorOp<nd::OwnedArcRepr<A>, nd::OwnedArcRepr<B>>;
+pub type OwnedOp<A, B> = TensorOp<OwnedRepr<A>, OwnedRepr<B>>;
+pub type ArcOp<A, B> = TensorOp<OwnedArcRepr<A>, OwnedArcRepr<B>>;
 
 pub trait NdTensorOp<S1, S2>
 where

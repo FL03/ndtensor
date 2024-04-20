@@ -6,18 +6,18 @@
 use crate::TensorBase;
 
 use acme::ops::{BinaryOp, UnaryOp};
-use nd::{Data, DataMut, DataOwned, OwnedArcRepr, OwnedRepr, ViewRepr};
+use nd::{Data, DataMut, DataOwned, Dimension, OwnedArcRepr, OwnedRepr, ViewRepr};
 use nd::{RawData, RawDataClone, RawDataMut, RawViewRepr};
 use num::traits::{NumCast, ToPrimitive};
 
 pub type BoxTensor<S> = Box<TensorBase<S>>;
 
-pub enum ReshapeExpr<S>
+pub enum ReshapeExpr<S, D>
 where
+    D: Dimension,
     S: RawData,
 {
-    Reshape(BoxTensor<S>),
-    Transpose(BoxTensor<S>),
+    Transpose(Box<Expr<S, D>>),
 }
 
 macro_rules! map_views {
@@ -52,6 +52,21 @@ macro_rules! map_views {
         }
     };
 }
+
+pub enum Expr<S, D> where D: nd::Dimension, S: RawData, {
+    Binary {
+        lhs: Box<Expr<S, D>>,
+        rhs: Box<Expr<S, D>>,
+        op: BinaryOp,
+    },
+    Unary {
+        recv: Box<Expr<S, D>>,
+        op: UnaryOp,
+    },
+    Scalar(S::Elem),
+    Tensor(TensorBase<S, D>),
+}
+
 
 pub enum TensorExpr<S1, S2 = S1>
 where
