@@ -12,6 +12,61 @@ where
     S1: RawData,
     S2: RawData;
 
+
+macro_rules! opviews {
+    ($call:ident(self) -> $view:ident where $($arg:ident:$($bound:ident)*),*) => {
+        pub fn $call(self) -> TensorOp<$view<A>, $view<B>> where $($arg: $($bound)*),* {
+            TensorOp(self.0.map(|expr| expr.$call()))
+        }
+    };
+    ($call:ident(self) -> $view:ident) => {
+        pub fn $call(self) -> TensorOp<$view<A>, $view<B>> {
+            TensorOp(self.0.map(|expr| expr.$call()))
+        }
+    };
+    ($call:ident(&self) -> $view:ident<*$ptr:ident> where $($arg:ident:$($bound:ident)*),*) => {
+        pub fn $call(&self) -> TensorOp<$view<*$ptr A>, $view<*$ptr B>> where $($arg: $($bound)*),* {
+            TensorOp(self.as_ref().map(|expr| expr.$call()))
+        }
+    };
+    ($call:ident(&self) -> $view:ident<&'_> where $($arg:ident:$($bound:ident)*),*) => {
+        pub fn $call(&self) -> TensorOp<$view<&'_ A>, $view<&'_ B>> where $($arg: $($bound)*),* {
+            TensorOp(self.as_ref().map(|expr| expr.$call()))
+        }
+    };
+    ($call:ident(&self) -> $view:ident where $($arg:ident:$($bound:ident)*),*) => {
+        pub fn $call(&self) -> TensorOp<$view<A>, $view<B>> where $($arg: $($bound)*),* {
+            TensorOp(self.as_ref().map(|expr| expr.$call()))
+        }
+    };
+    ($call:ident(&self) -> $view:ident) => {
+        pub fn $call(&self) -> TensorOp<$view<A>, $view<B>> {
+            TensorOp(self.as_ref().map(|expr| expr.$call()))
+        }
+    };
+    ($call:ident(&mut self) -> $view:ident<*$ptr:ident> where $($arg:ident:$($bound:ident)*),*) => {
+        pub fn $call(&mut self) -> TensorOp<$view<*$ptr A>, $view<*$ptr B>> where $($arg: $($bound)*),* {
+            TensorOp(self.as_mut().map(|expr| expr.$call()))
+        }
+    };
+    ($call:ident(&mut self) -> $view:ident<&'_ mut> where $($arg:ident:$($bound:ident)*),*) => {
+        pub fn $call(&mut self) -> TensorOp<$view<&'_ mut A>, $view<&'_ mut B>> where $($arg: $($bound)*),* {
+            TensorOp(self.as_mut().map(|expr| expr.$call()))
+        }
+    };
+    (&mut $call:ident<$view:ident> where $($arg:ident:$($bound:ident)*),*) => {
+        pub fn $call(&mut self) -> TensorOp<$view<A>, $view<B>> where $($arg: $($bound)*),* {
+            TensorOp(self.as_mut().map(|expr| expr.$call()))
+        }
+    };
+    
+    (&mut $call:ident<$view:ident>) => {
+        pub fn $call(&mut self) -> TensorOp<$view<A>, $view<B>> {
+            TensorOp(self.as_mut().map(|expr| expr.$call()))
+        }
+    };
+}
+
 impl<A, B, S1, S2> TensorOp<S1, S2>
 where
     S1: RawData<Elem = A>,
@@ -33,23 +88,7 @@ where
         self.0.as_mut()
     }
 
-    pub fn into_owned(self) -> TensorOp<OwnedRepr<A>, OwnedRepr<B>>
-    where
-        A: Clone,
-        B: Clone,
-        S1: DataOwned,
-        S2: DataOwned,
-    {
-        TensorOp(self.0.map(|expr| expr.into_owned()))
-    }
 
-    pub fn into_shared(self) -> TensorOp<OwnedArcRepr<A>, OwnedArcRepr<B>>
-    where
-        S1: DataOwned,
-        S2: DataOwned,
-    {
-        TensorOp(self.0.map(|expr| expr.into_shared()))
-    }
 
     pub fn is_none(&self) -> bool {
         self.0.is_none()
@@ -67,56 +106,17 @@ where
         S1: Data,
         S2: Data,
     {
-        TensorOp(self.0.as_ref().map(|expr| expr.numcast::<C>()))
+        TensorOp(self.as_ref().map(|expr| expr.numcast::<C>()))
     }
 
-    pub fn raw_view(&self) -> TensorOp<RawViewRepr<*const A>, RawViewRepr<*const B>> {
-        TensorOp(self.0.as_ref().map(|expr| expr.raw_view()))
-    }
-
-    pub fn raw_view_mut(&mut self) -> TensorOp<RawViewRepr<*mut A>, RawViewRepr<*mut B>>
-    where
-        S1: RawDataMut,
-        S2: RawDataMut,
-    {
-        TensorOp(self.0.as_mut().map(|expr| expr.raw_view_mut()))
-    }
-
-    pub fn to_owned(&self) -> TensorOp<OwnedRepr<A>, OwnedRepr<B>>
-    where
-        A: Clone,
-        B: Clone,
-        S1: Data,
-        S2: Data,
-    {
-        TensorOp(self.0.as_ref().map(|expr| expr.to_owned()))
-    }
-
-    pub fn to_shared(&self) -> TensorOp<OwnedArcRepr<A>, OwnedArcRepr<B>>
-    where
-        A: Clone,
-        B: Clone,
-        S1: Data,
-        S2: Data,
-    {
-        TensorOp(self.0.as_ref().map(|expr| expr.to_shared()))
-    }
-
-    pub fn view(&self) -> TensorOp<ViewRepr<&'_ A>, ViewRepr<&'_ B>>
-    where
-        S1: Data,
-        S2: Data,
-    {
-        TensorOp(self.0.as_ref().map(|expr| expr.view()))
-    }
-
-    pub fn view_mut(&mut self) -> TensorOp<ViewRepr<&'_ mut A>, ViewRepr<&'_ mut B>>
-    where
-        S1: DataMut,
-        S2: DataMut,
-    {
-        TensorOp(self.0.as_mut().map(|expr| expr.view_mut()))
-    }
+    opviews!(into_owned(self) -> OwnedRepr where A: Clone, B: Clone, S1: DataOwned, S2: DataOwned);
+    opviews!(to_owned(&self) -> OwnedRepr where A: Clone, B: Clone, S1: Data, S2: Data);
+    opviews!(into_shared(self) -> OwnedArcRepr where S1: DataOwned, S2: DataOwned);
+    opviews!(to_shared(&self) -> OwnedArcRepr where A: Clone, B: Clone, S1: Data, S2: Data);
+    opviews!(raw_view(&self) -> RawViewRepr<*const> where S1: RawData, S2: RawData);
+    opviews!(raw_view_mut(&mut self) -> RawViewRepr<*mut> where S1: RawDataMut, S2: RawDataMut);
+    opviews!(view(&self) -> ViewRepr<&'_> where S1: Data, S2: Data);
+    opviews!(view_mut(&mut self) -> ViewRepr<&'_ mut> where S1: DataMut, S2: DataMut);
 }
 
 impl<S1, S2> Borrow<Option<TensorExpr<S1, S2>>> for TensorOp<S1, S2>

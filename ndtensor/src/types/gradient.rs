@@ -5,8 +5,11 @@
 use crate::prelude::TensorId;
 use crate::TensorBase;
 use acme::prelude::Store;
+#[cfg(not(feature = "std"))]
+use alloc::collections::btree_map::{self, BTreeMap, Entry, Keys, Values};
 use core::borrow::{Borrow, BorrowMut};
 use core::ops::{Deref, DerefMut, Index, IndexMut};
+#[cfg(feature = "std")]
 use std::collections::btree_map::{self, BTreeMap, Entry, Keys, Values};
 
 use ndarray::{DataOwned, RawData};
@@ -198,7 +201,7 @@ where
     S: RawData,
 {
     type Item = (TensorId, TensorBase<S>);
-    type IntoIter = std::collections::btree_map::IntoIter<TensorId, TensorBase<S>>;
+    type IntoIter = btree_map::IntoIter<TensorId, TensorBase<S>>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.store.into_iter()

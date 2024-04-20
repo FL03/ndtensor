@@ -107,6 +107,7 @@ fn test_e() {
     assert_eq!(ln.backward().unwrap()[id], tensor.recip().into_dyn());
     assert_eq!(exp.backward().unwrap()[id], tensor.exp().into_dyn());
 }
+
 #[test]
 fn test_trig() {
     let shape = (3, 3);
@@ -125,6 +126,21 @@ fn test_trig() {
         c.backward().unwrap()[id],
         tensor.cos().powi(2).recip().into_dyn()
     );
+}
+
+#[test]
+fn test_trig_ext() {
+    let shape = (3, 3);
+
+    let tensor = Tensor::<f64, Ix2>::linshape(shape.clone())
+        .unwrap()
+        .variable();
+    let id = tensor.id();
+
+    let a = tensor.cos().sin();
+    let b = tensor.sin().cos();
+    assert_eq!(a.grad(id).unwrap(), (-tensor.cos().cos() * tensor.sin()).into_dyn());
+    assert_eq!(b.grad(id).unwrap(), (-tensor.sin().sin() * tensor.cos()).into_dyn());
 }
 
 #[test]

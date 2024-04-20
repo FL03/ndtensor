@@ -125,3 +125,22 @@ macro_rules! map_method {
         }
     };
 }
+
+#[allow(unused_macros)]
+macro_rules! fwd_method {
+    ($method:ident) => {
+        pub fn $method(&self) -> Self {
+            new!(self.data.$method())
+        }
+    };
+    (@impl $method:ident($($field:ident:$ty:ty),*) -> $res:ident where $(param:ident:$($tr:tt),*),*) => {
+        pub fn $method($($field:$ty),*) -> $res where $(param:$($tr),*),* {
+            new!(self.data.$method($($field),*))
+        }
+    };
+    (@impl $method:ident($($field:ident:$ty:ty),*)) => {
+        pub fn $method($($field:$ty),*) -> Self {
+            new!(self.data.$method($($field),*))
+        }
+    };
+}

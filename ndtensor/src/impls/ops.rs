@@ -5,24 +5,8 @@
 use crate::prelude::{Dimension, TensorExpr};
 use crate::TensorBase;
 use acme::prelude::{BinaryOp, Scalar, UnaryOp};
-use nd::{ArrayBase, DimMax};
-use nd::{Data, DataMut, DataOwned, OwnedRepr, RawDataClone, ScalarOperand};
-use num::complex::ComplexFloat;
-
-macro_rules! unop {
-    ($($method:ident),*) => {
-        $(
-            unop!(@loop $method);
-        )*
-    };
-    (@loop $method:ident) => {
-        pub fn $method(&self) -> crate::Tensor<A, D> {
-            let data = self.data().mapv(|x| x.$method());
-            let op = TensorExpr::unary(self.to_owned().into_dyn().boxed(), UnaryOp::$method());
-            new!(data, Some(op))
-        }
-    };
-}
+use nd::{ArrayBase, DimMax, ScalarOperand};
+use nd::{Data, DataMut, DataOwned, OwnedRepr, RawDataClone,};
 
 macro_rules! binop {
     ($(($method:ident, $op:tt)),*) => {
@@ -32,13 +16,28 @@ macro_rules! binop {
     };
 
     (@loop $method:ident, $op:tt) => {
-        pub fn $method(&self, other: &Self) -> crate::Tensor<A, D> {
+        pub fn $method(&self, other: &Self) -> $crate::Tensor<A, D> {
             let data = self.data() $op other.data();
             let op = TensorExpr::binary(
                 self.to_owned().into_dyn().boxed(),
                 other.to_owned().into_dyn().boxed(),
                 BinaryOp::$method(),
             );
+            new!(data, Some(op))
+        }
+    };
+}
+
+macro_rules! unop {
+    ($($method:ident),*) => {
+        $(
+            unop!(@loop $method);
+        )*
+    };
+    (@loop $method:ident) => {
+        pub fn $method(&self) -> $crate::Tensor<A, D> {
+            let data = self.data().mapv(|x| x.$method());
+            let op = TensorExpr::unary(self.to_owned().into_dyn().boxed(), UnaryOp::$method());
             new!(data, Some(op))
         }
     };
@@ -52,7 +51,7 @@ macro_rules! scalar_op {
     };
 
     (@loop $method:ident, $variant:ident, $op:tt) => {
-        pub fn $method(&self, other: A) -> crate::Tensor<A, D> where A: ScalarOperand, S: Data<Elem = A> {
+        pub fn $method(&self, other: A) -> $crate::Tensor<A, D> {
             let data = self.data() $op other;
             let op = TensorExpr::binary(
                 self.to_owned().into_dyn().boxed(),
@@ -67,7 +66,7 @@ macro_rules! scalar_op {
 
 impl<A, S, D> TensorBase<S, D>
 where
-    A: Scalar,
+    A: Scalar + ScalarOperand,
     D: Dimension,
     S: Data<Elem = A> + DataOwned + RawDataClone,
 {
@@ -170,6 +169,7 @@ macro_rules! impl_unary_op {
         }
     };
 }
+
 macro_rules! impl_assign_op {
     ($(($bound:ident, $target:ident, $call:ident)),*) => {
         $(
@@ -185,13 +185,11 @@ macro_rules! impl_assign_op {
             S2: DataOwned<Elem = A> + RawDataClone,
 
         {
-
             fn $call(&mut self, rhs: &'a ArrayBase<S2, D2>) {
 
-                let lhs = self.to_dyn();
                 let op = TensorExpr::binary(
-                    Box::new(lhs),
-                    Box::new(TensorBase::from_arr(rhs.to_owned().into_dyn())),
+                    self.to_dyn().boxed(),
+                    TensorBase::ndtensor(rhs.to_owned().into_dyn()).boxed(),
                     BinaryOp::$target(),
                 );
                 let mut data = self.data().clone();
@@ -207,13 +205,10 @@ macro_rules! impl_assign_op {
             S2: DataOwned<Elem = A> + RawDataClone,
 
         {
-
             fn $call(&mut self, rhs: &'a TensorBase<S2, D2>) {
-
-                let lhs = self.to_dyn();
                 let op = TensorExpr::binary(
-                    Box::new(lhs),
-                    Box::new(rhs.to_owned().into_dyn()),
+                    self.to_dyn().boxed(),
+                    rhs.to_owned().into_dyn().boxed(),
                     BinaryOp::$target(),
                 );
                 let mut data = self.data().clone();
@@ -407,8 +402,6 @@ macro_rules! impl_binary_op {
     };
 }
 
-impl_binary_op!((Add, add), (Div, div), (Mul, mul), (Rem, rem), (Sub, sub));
-
 impl_assign_op!(
     (AddAssign, add, add_assign),
     (DivAssign, div, div_assign),
@@ -416,5 +409,7 @@ impl_assign_op!(
     (RemAssign, rem, rem_assign),
     (SubAssign, sub, sub_assign)
 );
+
+impl_binary_op!((Add, add), (Div, div), (Mul, mul), (Rem, rem), (Sub, sub));
 
 impl_unary_op!((core::ops::Neg, neg), (core::ops::Not, not));

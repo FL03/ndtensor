@@ -2,7 +2,6 @@
     Appellation: dimensional <impls>
     Contrib: FL03 <jo3mccain@icloud.com>
 */
-use crate::ops::TensorOp;
 use crate::{Tensor, TensorBase, TensorView, TensorViewMut};
 
 use nd::{Data, DataMut, RawData};
@@ -18,6 +17,7 @@ impl<A, S> TensorBase<S, Ix2>
 where
     S: RawData<Elem = A>,
 {
+    
     pub fn column(&self, idx: Ix) -> TensorView<'_, A, Ix1>
     where
         S: Data<Elem = A>,
@@ -30,14 +30,8 @@ where
     where
         S: DataMut<Elem = A>,
     {
-        let ctx = *self.ctx();
         let data = self.data.column_mut(idx);
-        TensorBase {
-            id: self.id,
-            ctx,
-            data,
-            op: TensorOp::none(),
-        }
+        TensorBase::new(data, None, self.ctx.is_variable())
     }
 
     pub fn is_square(&self) -> bool {
