@@ -70,7 +70,7 @@ where
                             let rhs = rhs.to_owned().into_dimensionality::<nd::Ix0>().unwrap();
                             let val = rhs.into_scalar();
                             match op {
-                                BinaryOp::Arithmetic(inner) => match inner {
+                                BinaryOp::Arith(inner) => match inner {
                                     Arithmetic::Add(_) => {
                                         *entry!(store, lhs) += &grad;
                                     }
@@ -94,7 +94,7 @@ where
                             }
                         } else {
                             match op {
-                                BinaryOp::Arithmetic(inner) => match inner {
+                                BinaryOp::Arith(inner) => match inner {
                                     Arithmetic::Add(_) => {
                                         *entry!(store, lhs) += &grad;
                                         *entry!(store, rhs) += &grad;
