@@ -11,6 +11,7 @@ where
     D: Dimension,
     S: RawData<Elem = A>,
 {
+    /// Transforms the tensor into a new shape.
     pub fn into_shape<D2>(self, shape: D2) -> Result<TensorBase<S, D2::Dim>, ShapeError>
     where
         D2: IntoDimension,

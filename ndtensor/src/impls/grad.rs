@@ -164,7 +164,10 @@ where
         Ok(store)
     }
     /// Compute the gradient of the tensor w.r.t. a particular variable (tensor)
-    pub fn grad(&self, target: TensorId) -> Result<crate::Tensor<A>, TensorError> where A: Scalar<Real = A> {
+    pub fn grad(&self, target: TensorId) -> Result<crate::Tensor<A>, TensorError>
+    where
+        A: Scalar<Real = A>,
+    {
         let store = self.backward()?;
         let grad = store.get(&target).expect("Gradient not found");
         Ok(grad.to_owned())

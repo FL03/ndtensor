@@ -19,7 +19,7 @@ pub(crate) mod macros;
 pub(crate) mod specs;
 pub(crate) mod tensor;
 pub(crate) mod utils;
-#[macro_use]
+
 pub mod ops;
 
 pub(crate) mod impls {

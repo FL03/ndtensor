@@ -119,16 +119,9 @@ where
         (sub_scalar, sub, -)
     );
 
-    unop!(cos, cosh, exp, ln, neg, recip, sin, sinh, sqr, sqrt, tan, tanh);
+    unop!(acos, acosh, asin, asinh, atan, cos, cosh, exp, ln, neg, recip, sin, sinh, sqr, sqrt, tan, tanh);
 }
-impl<A, S, D> TensorBase<S, D>
-where
-    A: ComplexFloat,
-    D: Dimension,
-    S: Data<Elem = A> + DataOwned + RawDataClone,
-{
-    unop!(acos, acosh, asin, asinh, atan);
-}
+
 
 macro_rules! impl_unary_op {
     ($(($($path:ident)::*, $call:ident)),*) => {

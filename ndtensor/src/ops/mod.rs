@@ -19,8 +19,9 @@ where
     fn from_expr(expr: TensorExpr<S1, S2>) -> Self;
     fn new(expr: Option<TensorExpr<S1, S2>>) -> Self;
     fn none() -> Self;
-
+    ///
     fn is_none(&self) -> bool;
+    ///
     fn is_some(&self) -> bool;
 
     fn as_ref(&self) -> Option<&TensorExpr<S1, S2>>;
@@ -28,7 +29,11 @@ where
     fn as_mut(&mut self) -> Option<&mut TensorExpr<S1, S2>>;
 }
 
-pub trait NdTensorOpExt<S1, S2>: NdTensorOp<S1, S2> where S1: RawData, S2: RawData {
+pub trait NdTensorOpExt<S1, S2>: NdTensorOp<S1, S2>
+where
+    S1: RawData,
+    S2: RawData,
+{
     type Op: NdTensorOp<S1, S2>;
 
     fn map<F, O, T1>(self, f: F) -> O
@@ -37,7 +42,6 @@ pub trait NdTensorOpExt<S1, S2>: NdTensorOp<S1, S2> where S1: RawData, S2: RawDa
         F: FnOnce(TensorExpr<S1, S2>) -> TensorExpr<T1>,
         T1: RawData;
 }
-
 
 impl<A, B, S1, S2> NdTensorOp<S1, S2> for Option<TensorExpr<S1, S2>>
 where

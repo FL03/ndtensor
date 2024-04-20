@@ -8,6 +8,13 @@ use acme::prelude::Scalar;
 use nd::{Ix0, RawData};
 use num::complex::ComplexFloat;
 
+pub trait IntoTensor {
+    fn into_tensor<S, D>(self) -> crate::TensorBase<S, D>
+    where
+        S: RawData,
+        D: Dimension;
+}
+
 pub trait NdTensor<S, D = IxDyn>
 where
     D: Dimension,
@@ -23,7 +30,6 @@ where
 }
 
 pub trait ScalarExt: Scalar {
-    fn acos(self) -> Self;
     fn into_tensor(self) -> Tensor<Self, Ix0> {
         Tensor::from_scalar(self)
     }
@@ -33,11 +39,4 @@ pub trait ScalarExt: Scalar {
     }
 }
 
-impl<S> ScalarExt for S
-where
-    S: ComplexFloat + Scalar,
-{
-    fn acos(self) -> Self {
-        ComplexFloat::acos(self)
-    }
-}
+impl<S> ScalarExt for S where S: ComplexFloat + Scalar {}
