@@ -2,16 +2,19 @@
     Appellation: utils <module>
     Contrib: FL03 <jo3mccain@icloud.com>
 */
-use nd::{Array, Data, Dimension, IntoDimension};
+use crate::prelude::{TensorExpr, TensorId};
+use crate::TensorBase;
+use nd::{Array, Dimension, IntoDimension, RawData, RawDataClone};
 use num::Float;
-use std::collections::{HashMap, VecDeque};
-use std::hash::{DefaultHasher, Hash, Hasher};
+use std::collections::HashMap;
 
 /// Hashes a dimension using the [DefaultHasher].
+#[cfg(feature = "std")]
 pub fn hash_dim<D>(dim: impl IntoDimension<Dim = D>) -> u64
 where
     D: Dimension,
 {
+    use std::hash::{DefaultHasher, Hash, Hasher};
     let dim = dim.into_dimension();
     let mut s = DefaultHasher::new();
     for i in dim.slice() {
@@ -32,11 +35,6 @@ where
         .into_shape(dim)
         .expect("linspace err")
 }
-
-
-use crate::prelude::{TensorExpr, TensorId};
-use crate::TensorBase;
-use ndarray::{RawData, RawDataClone};
 
 pub(crate) fn walk<S>(
     scope: TensorBase<S>,
