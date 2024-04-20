@@ -64,8 +64,8 @@ strum = { features = ["derive"], version = "0.26"}
 
 [dependencies.acme]
 path = "../acme/acme"
-version = "0.3.1"
-
+# version = "0.3.1"
+version = "0.3.1-nightly"
 
 [dev-dependencies]
 lazy_static = "1"

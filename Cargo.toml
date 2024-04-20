@@ -8,8 +8,8 @@ keywords = ["tensor"]
 license = "Apache-2.0"
 repository = "https://github.com/FL03/ndtensor"
 readme = "README.md"
-version = "0.1.0"
-# version = "0.1.0-alpha"
+# version = "0.1.0"
+version = "0.1.0-alpha"
 
 [workspace]
 default-members = [
