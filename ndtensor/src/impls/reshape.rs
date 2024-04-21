@@ -20,13 +20,11 @@ where
         let dim = shape.into_dimension();
         let mut ctx = *self.ctx();
         ctx.set_rank(dim.ndim());
-        self.data.broadcast(dim).map(|data| {
-            crate::TensorBase {
-                id: self.id,
-                ctx,
-                data,
-                op: self.op.view(),
-            }
+        self.data.broadcast(dim).map(|data| crate::TensorBase {
+            id: self.id,
+            ctx,
+            data,
+            op: self.op.view(),
         })
     }
     /// Transforms the tensor into a new shape.
@@ -80,7 +78,7 @@ where
         let mut ctx = *self.ctx();
         let data = self.data.to_shape(shape)?.to_owned();
         ctx.set_rank(data.ndim());
-        
+
         Ok(TensorBase {
             id: self.id,
             ctx,

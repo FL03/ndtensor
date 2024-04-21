@@ -7,7 +7,7 @@ currently being supported with security updates.
 
 | Package      | Current | Supported |
 |--------------|---------|-----------|
-| acme         | 0.3.0   | <=0.3.0   |
+|   ndtensor   |  0.1.0  |  <=0.1.0  |
 
 ## Reporting a Vulnerability
 
@@ -16,5 +16,5 @@ or visit the company [website](https://scattered-systems.com) for more informati
 
 ### Quick Links
 
-* [Crate](https://crates.io/crates/acme)
-* [Docs](https://docs.rs/acme)
+* [Crate](https://crates.io/crates/ndtensor)
+* [Docs](https://docs.rs/ndtensor)

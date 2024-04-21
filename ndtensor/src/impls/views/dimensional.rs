@@ -17,7 +17,6 @@ impl<A, S> TensorBase<S, Ix2>
 where
     S: RawData<Elem = A>,
 {
-    
     pub fn column(&self, idx: Ix) -> TensorView<'_, A, Ix1>
     where
         S: Data<Elem = A>,

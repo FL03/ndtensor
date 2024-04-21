@@ -9,7 +9,7 @@ use num::{Num, NumCast, One, Zero};
 
 impl<A, S> TensorBase<S, ndarray::Ix0>
 where
-    S: RawData<Elem = A>,
+    S: Data<Elem = A>,
 {
     pub fn from_scalar(scalar: A) -> Self
     where

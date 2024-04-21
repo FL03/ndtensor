@@ -6,7 +6,7 @@ use crate::prelude::{Dimension, TensorExpr};
 use crate::TensorBase;
 use acme::prelude::{BinaryOp, Scalar, UnaryOp};
 use nd::{ArrayBase, DimMax, ScalarOperand};
-use nd::{Data, DataMut, DataOwned, OwnedRepr, RawDataClone,};
+use nd::{Data, DataMut, DataOwned, OwnedRepr, RawDataClone};
 
 macro_rules! binop {
     ($(($method:ident, $op:tt)),*) => {
@@ -118,9 +118,11 @@ where
         (sub_scalar, sub, -)
     );
 
-    unop!(acos, acosh, asin, asinh, atan, cos, cosh, exp, ln, neg, recip, sin, sinh, sqr, sqrt, tan, tanh);
+    unop!(
+        acos, acosh, asin, asinh, atan, cos, cosh, exp, ln, neg, recip, sin, sinh, sqr, sqrt, tan,
+        tanh
+    );
 }
-
 
 macro_rules! impl_unary_op {
     ($(($($path:ident)::*, $call:ident)),*) => {
@@ -402,6 +404,60 @@ macro_rules! impl_binary_op {
     };
 }
 
+#[allow(unused_macros)]
+macro_rules! impl_binop_scalar {
+    ($t:ty: $($bound:ident.$call:ident),*) => {
+        $(
+            impl_binop_scalar!(@impl $bound.$call($t));
+        )*
+    };
+    (@impl $bound:ident.$call:ident($t:ty)) => {
+        // impl_binary_op!(alt: $bound, $call, $op);
+
+        impl<A, S, D> core::ops::$bound<$t> for TensorBase<S, D>
+        where
+            A: Clone + num::NumCast,
+            D: Dimension,
+            S: DataOwned<Elem = A> + DataMut,
+            ArrayBase<S, D>: core::ops::$bound<$t, Output = ArrayBase<OwnedRepr<$t>, D>>,
+        {
+            type Output = TensorBase<OwnedRepr<$t>, D>;
+
+            fn $call(self, rhs: $t) -> Self::Output {
+                let op = TensorExpr::binary(
+                    self.numcast::<$t>().into_dyn().boxed(),
+                    TensorBase::from_scalar(rhs).into_owned().into_dyn().boxed(),
+                    BinaryOp::$call(),
+                );
+                let data = core::ops::$bound::$call(self.data, rhs);
+
+                new!(data, Some(op))
+            }
+        }
+
+        impl<'a, A, S, D> core::ops::$bound<$t> for &'a TensorBase<S, D>
+        where
+            A: Clone + num::NumCast,
+            D: Dimension,
+            S: DataOwned<Elem = A> + DataMut,
+            ArrayBase<S, D>: core::ops::$bound<$t, Output = ArrayBase<OwnedRepr<$t>, D>>,
+        {
+            type Output = TensorBase<OwnedRepr<$t>, D>;
+
+            fn $call(self, rhs: $t) -> Self::Output {
+                let op = TensorExpr::binary(
+                    self.to_owned().into_dyn().boxed(),
+                    TensorBase::from_scalar(rhs).into_owned().into_dyn().boxed(),
+                    BinaryOp::$call(),
+                );
+                let data = core::ops::$bound::$call(self.data, rhs);
+
+                new!(data, Some(op))
+            }
+        }
+    };
+}
+
 impl_assign_op!(
     (AddAssign, add, add_assign),
     (DivAssign, div, div_assign),
@@ -411,5 +467,8 @@ impl_assign_op!(
 );
 
 impl_binary_op!((Add, add), (Div, div), (Mul, mul), (Rem, rem), (Sub, sub));
+
+// impl_binop_scalar!(f32: Add.add, Div.div, Mul.mul, Sub.sub);
+// impl_binop_scalar!(f64: Add.add, Div.div, Mul.mul, Sub.sub);
 
 impl_unary_op!((core::ops::Neg, neg), (core::ops::Not, not));

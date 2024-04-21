@@ -6,6 +6,7 @@
 
 extern crate ndtensor;
 
+use acme::prelude::Scalar;
 use ndarray::*;
 use ndtensor::prelude::Tensor;
 
@@ -139,8 +140,14 @@ fn test_trig_ext() {
 
     let a = tensor.cos().sin();
     let b = tensor.sin().cos();
-    assert_eq!(a.grad(id).unwrap(), (-tensor.cos().cos() * tensor.sin()).into_dyn());
-    assert_eq!(b.grad(id).unwrap(), (-tensor.sin().sin() * tensor.cos()).into_dyn());
+    assert_eq!(
+        a.grad(id).unwrap(),
+        (-tensor.cos().cos() * tensor.sin()).into_dyn()
+    );
+    assert_eq!(
+        b.grad(id).unwrap(),
+        (-tensor.sin().sin() * tensor.cos()).into_dyn()
+    );
 }
 
 #[test]
@@ -158,4 +165,30 @@ fn test_chained() {
     assert_eq!(grad[a.id()], exp);
     let exp = Tensor::fill(dim.clone(), 2f64).into_dyn();
     assert_eq!(grad[b.id()], exp);
+}
+
+#[test]
+fn test_sigmoid() {
+    use approx::AbsDiffEq;
+    let shape = (3, 3);
+    let dim = shape.clone().into_dimension();
+
+    let a = Tensor::<f64, Ix2>::linshape(dim.clone())
+        .unwrap()
+        .variable();
+
+    let res = sigmoid(&a);
+
+    let exp = sigmoid(&a)
+        .mul(&sigmoid(&a).neg().add_scalar(1f64))
+        .into_dyn();
+    assert!(res.grad(a.id()).unwrap().abs_diff_eq(&exp, 1e-8))
+}
+
+fn sigmoid<T, D>(tensor: &Tensor<T, D>) -> Tensor<T, D>
+where
+    D: Dimension,
+    T: Scalar + ScalarOperand,
+{
+    tensor.exp() / tensor.exp().add_scalar(T::one())
 }

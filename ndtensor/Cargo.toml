@@ -45,6 +45,14 @@ doctest = true
 test = true
 
 [[test]]
+name = "approx"
+required-features = ["approx"]
+
+[[test]]
+name = "backward"
+required-features = ["approx"]
+
+[[test]]
 name = "tensor"
 required-features = ["approx", "std"]
 

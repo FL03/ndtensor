@@ -53,7 +53,11 @@ macro_rules! map_views {
     };
 }
 
-pub enum Expr<S, D> where D: nd::Dimension, S: RawData, {
+pub enum Expr<S, D>
+where
+    D: nd::Dimension,
+    S: RawData,
+{
     Binary {
         lhs: Box<Expr<S, D>>,
         rhs: Box<Expr<S, D>>,
@@ -66,7 +70,6 @@ pub enum Expr<S, D> where D: nd::Dimension, S: RawData, {
     Scalar(S::Elem),
     Tensor(TensorBase<S, D>),
 }
-
 
 pub enum TensorExpr<S1, S2 = S1>
 where
@@ -106,6 +109,16 @@ where
         TensorExpr::Unary { recv, op }
     }
 
+    pub fn cell_view(
+        &mut self,
+    ) -> TensorExpr<ViewRepr<&'_ nd::MathCell<A>>, ViewRepr<&'_ nd::MathCell<B>>>
+    where
+        S1: DataMut,
+        S2: DataMut,
+    {
+        fwd_view_body!(&mut self, cell_view)
+    }
+
     pub fn numcast<C>(&self) -> TensorExpr<OwnedRepr<C>, OwnedRepr<C>>
     where
         A: Clone + ToPrimitive,
@@ -116,7 +129,6 @@ where
     {
         fwd_expr_call!(&self.numcast::<C>().boxed())
     }
-
     map_views!(into_owned<OwnedRepr> where A: Clone, B: Clone, S1: DataOwned, S2: DataOwned);
     map_views!(into_shared<OwnedArcRepr> where S1: DataOwned, S2: DataOwned);
 

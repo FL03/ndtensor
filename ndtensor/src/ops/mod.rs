@@ -7,7 +7,7 @@ pub use self::{expr::*, wrapper::TensorOp};
 pub(crate) mod expr;
 pub(crate) mod wrapper;
 
-use nd::{OwnedRepr, OwnedArcRepr, RawData};
+use nd::{OwnedArcRepr, OwnedRepr, RawData};
 
 pub type OwnedOp<A, B> = TensorOp<OwnedRepr<A>, OwnedRepr<B>>;
 pub type ArcOp<A, B> = TensorOp<OwnedArcRepr<A>, OwnedArcRepr<B>>;

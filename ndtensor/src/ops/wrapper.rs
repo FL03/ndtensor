@@ -12,11 +12,22 @@ where
     S1: RawData,
     S2: RawData;
 
+macro_rules! opmap {
+    ($self:ident.$call:ident) => {
+        TensorOp($self.0.map(|expr| expr.$call()))
+    };
+    (&$self:ident.$call:ident) => {
+        TensorOp($self.as_ref().map(|expr| expr.$call()))
+    };
+    (&mut $self:ident.$call:ident) => {
+        TensorOp($self.as_mut().map(|expr| expr.$call()))
+    };
+}
 
 macro_rules! opviews {
     ($call:ident(self) -> $view:ident where $($arg:ident:$($bound:ident)*),*) => {
         pub fn $call(self) -> TensorOp<$view<A>, $view<B>> where $($arg: $($bound)*),* {
-            TensorOp(self.0.map(|expr| expr.$call()))
+            opmap!(self.$call)
         }
     };
     ($call:ident(self) -> $view:ident) => {
@@ -59,7 +70,7 @@ macro_rules! opviews {
             TensorOp(self.as_mut().map(|expr| expr.$call()))
         }
     };
-    
+
     (&mut $call:ident<$view:ident>) => {
         pub fn $call(&mut self) -> TensorOp<$view<A>, $view<B>> {
             TensorOp(self.as_mut().map(|expr| expr.$call()))
@@ -88,8 +99,6 @@ where
         self.0.as_mut()
     }
 
-
-
     pub fn is_none(&self) -> bool {
         self.0.is_none()
     }
@@ -109,6 +118,15 @@ where
         TensorOp(self.as_ref().map(|expr| expr.numcast::<C>()))
     }
 
+    pub fn cell_view(
+        &mut self,
+    ) -> TensorOp<ViewRepr<&'_ nd::MathCell<A>>, ViewRepr<&'_ nd::MathCell<B>>>
+    where
+        S1: DataMut,
+        S2: DataMut,
+    {
+        opmap!(&mut self.cell_view)
+    }
     opviews!(into_owned(self) -> OwnedRepr where A: Clone, B: Clone, S1: DataOwned, S2: DataOwned);
     opviews!(to_owned(&self) -> OwnedRepr where A: Clone, B: Clone, S1: Data, S2: Data);
     opviews!(into_shared(self) -> OwnedArcRepr where S1: DataOwned, S2: DataOwned);

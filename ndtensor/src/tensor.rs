@@ -36,8 +36,59 @@ where
         }
     }
 
+    pub unsafe fn as_ptr(&self) -> *const A {
+        self.data().as_ptr()
+    }
+
+    pub fn as_slice(&self) -> &[A]
+    where
+        S: Data,
+    {
+        self.data().as_slice().unwrap()
+    }
+
+    pub fn as_mut_ptr(&mut self) -> *mut A
+    where
+        S: RawDataMut,
+    {
+        self.data_mut().as_mut_ptr()
+    }
+
+    pub fn as_mut_slice(&mut self) -> &mut [A]
+    where
+        S: DataMut,
+    {
+        self.data_mut().as_slice_mut().unwrap()
+    }
+
+    pub fn assign<S2, D2>(&mut self, value: &ArrayBase<S2, D2>)
+    where
+        A: Clone,
+        S: DataMut,
+        D2: Dimension,
+        S2: Data<Elem = A>,
+    {
+        self.data_mut().assign(value);
+    }
+
+    pub fn axes(&self) -> iter::Axes<'_, D> {
+        self.data().axes()
+    }
+
     pub fn boxed(self) -> Box<TensorBase<S, D>> {
         Box::new(self)
+    }
+
+    pub fn cell_view(&mut self) -> crate::TensorView<'_, MathCell<A>, D>
+    where
+        S: DataMut,
+    {
+        TensorBase {
+            id: self.id,
+            ctx: self.ctx,
+            data: self.data.cell_view(),
+            op: self.op.cell_view(),
+        }
     }
     /// Get an immutable reference to the [context](Context) of the tensor.
     pub fn ctx(&self) -> &Context {
@@ -66,6 +117,20 @@ where
             data: self.data.view(),
             op: TensorOp::none(),
         }
+    }
+
+    pub fn diag(&self) -> crate::TensorView<'_, A, Ix1>
+    where
+        S: Data,
+    {
+        TensorBase::new(self.data().diag(), None, false)
+    }
+
+    pub fn diag_mut(&mut self) -> crate::TensorViewMut<'_, A, Ix1>
+    where
+        S: DataMut,
+    {
+        TensorBase::new(self.data.diag_mut(), None, false)
     }
 
     pub fn dim(&self) -> D::Pattern {

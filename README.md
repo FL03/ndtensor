@@ -1,12 +1,14 @@
 # ndtensor
 
-<!-- [![Clippy](https://github.com/FL03/acme/actions/workflows/clippy.yml/badge.svg)](https://github.com/FL03/acme/actions/workflows/clippy.yml)
-[![Rust](https://github.com/FL03/acme/actions/workflows/rust.yml/badge.svg)](https://github.com/FL03/acme/actions/workflows/rust.yml) -->
+[![Clippy](https://github.com/FL03/ndtensor/actions/workflows/clippy.yml/badge.svg)](https://github.com/FL03/ndtensor/actions/workflows/clippy.yml)
+[![Rust](https://github.com/FL03/ndtensor/actions/workflows/rust.yml/badge.svg)](https://github.com/FL03/ndtensor/actions/workflows/rust.yml)
+
 [![crates.io](https://img.shields.io/crates/v/ndtensor.svg)](https://crates.io/crates/ndtensor)
 [![docs.rs](https://docs.rs/ndtensor/badge.svg)](https://docs.rs/ndtensor)
 
 ***
 
+Welcome to ndtensor, a Rust library for n-dimensional tensors designed for flexibility and performance.
 
 
 ## Getting Started
@@ -22,7 +24,18 @@ git clone https://github.com/FL03/ndtensor
 ### Usage
 
 ```rust
+extern crate ndtensor;
 
+use ndtensor::Tensor;
+
+fn main() -> Result<(), Box<dyn std::error::Error> {
+    let shape = (3, 3);
+    
+    let tensor = Tensor::linspace(0f64, 8f64, 9).into_shape(shape)?;
+    println!("{:?}", tensor);
+
+    Ok(())
+}
 ```
 
 ## Contributing
