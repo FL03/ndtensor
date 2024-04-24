@@ -18,10 +18,10 @@ on:
 jobs:
   publish:
     env:
-      PACKAGE: ${{ github.event.repository.name }}
+      CARGO_PACKAGE_NAME: ${{ github.event.repository.name }}
     name: Publish (${{ github.event.repository.name }})
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Publish (${{ env.PACKAGE }})
-        run: cargo publish --all-features -v -p ${{ env.PACKAGE }} --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
+      - name: Publish (${{ env.CARGO_PACKAGE_NAME }})
+        run: cargo publish --all-features -v -p ${{ env.CARGO_PACKAGE_NAME }} --token ${{ secrets.CARGO_REGISTRY_TOKEN }}

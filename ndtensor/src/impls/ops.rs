@@ -173,12 +173,12 @@ macro_rules! impl_unary_op {
 }
 
 macro_rules! impl_assign_op {
-    ($(($bound:ident, $target:ident, $call:ident)),*) => {
+    ($($bound:ident.$call:ident),*) => {
         $(
-            impl_assign_op!($bound, $target, $call);
+            impl_assign_op!(@impl $bound.$call);
         )*
     };
-    ($bound:ident, $target:ident, $call:ident) => {
+    (@impl $bound:ident.$call:ident) => {
         impl<'a, A, S2, D1, D2> core::ops::$bound<&'a ArrayBase<S2, D2>> for $crate::Tensor<A, D1>
         where
             A: Clone + core::ops::$bound,
@@ -192,7 +192,7 @@ macro_rules! impl_assign_op {
                 let op = TensorExpr::binary(
                     self.to_dyn().boxed(),
                     TensorBase::ndtensor(rhs.to_owned().into_dyn()).boxed(),
-                    BinaryOp::$target(),
+                    BinaryOp::$call(),
                 );
                 let mut data = self.data().clone();
                 core::ops::$bound::$call(&mut data, rhs);
@@ -211,7 +211,7 @@ macro_rules! impl_assign_op {
                 let op = TensorExpr::binary(
                     self.to_dyn().boxed(),
                     rhs.to_owned().into_dyn().boxed(),
-                    BinaryOp::$target(),
+                    BinaryOp::$call(),
                 );
                 let mut data = self.data().clone();
                 core::ops::$bound::$call(&mut data, rhs.data());
@@ -459,11 +459,11 @@ macro_rules! impl_binop_scalar {
 }
 
 impl_assign_op!(
-    (AddAssign, add, add_assign),
-    (DivAssign, div, div_assign),
-    (MulAssign, mul, mul_assign),
-    (RemAssign, rem, rem_assign),
-    (SubAssign, sub, sub_assign)
+    AddAssign.add_assign,
+    DivAssign.div_assign,
+    MulAssign.mul_assign,
+    RemAssign.rem_assign,
+    SubAssign.sub_assign
 );
 
 impl_binary_op!((Add, add), (Div, div), (Mul, mul), (Rem, rem), (Sub, sub));
