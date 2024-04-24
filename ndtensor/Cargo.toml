@@ -71,9 +71,8 @@ smart-default = "0.7"
 strum = { features = ["derive"], version = "0.26"}
 
 [dependencies.acme]
-# path = "../acme/acme"
-
-version = "0.3.1"
+path = "../acme/acme"
+version = "0.3"
 
 
 [dev-dependencies]
