@@ -72,7 +72,7 @@ strum = { features = ["derive"], version = "0.26"}
 
 [dependencies.acme]
 path = "../acme/acme"
-version = "0.3"
+version = "0.3.2"
 
 
 [dev-dependencies]
