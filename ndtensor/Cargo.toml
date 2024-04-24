@@ -1,0 +1,88 @@
+[package]
+authors.workspace = true
+categories.workspace = true
+description.workspace = true
+edition.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+license.workspace = true
+name = "ndtensor"
+readme.workspace = true
+repository.workspace = true
+version.workspace = true
+
+[features]
+default = [
+    "approx",
+    "std",
+]
+
+approx = [
+    "dep:approx",
+    "ndarray/approx-0_5",
+]
+
+std = [
+    "acme/std",
+    "ndarray/std"
+]
+
+serde = [
+    "dep:serde",
+    "serde-ext"
+]
+
+serde-ext = [
+    "dep:serde_json",
+    "ndarray/serde-1",
+    "acme/serde",
+]
+
+[lib]
+bench = true
+crate-type = ["cdylib", "rlib"]
+doctest = true
+test = true
+
+[[test]]
+name = "approx"
+required-features = ["approx"]
+
+[[test]]
+name = "backward"
+required-features = ["approx"]
+
+[[test]]
+name = "tensor"
+required-features = ["approx", "std"]
+
+
+[build-dependencies]
+
+[dependencies]
+approx = { optional = true, version = "0.5" }
+itertools = "0.12"
+ndarray = "0.15"
+num = "0.4"
+paste = "1"
+serde = { features = ["derive"], optional = true, version = "1" }
+serde_json = { optional = true, version = "1" }
+smart-default = "0.7"
+strum = { features = ["derive"], version = "0.26"}
+
+[dependencies.acme]
+# path = "../acme/acme"
+
+version = "0.3.1"
+
+
+[dev-dependencies]
+lazy_static = "1"
+
+[package.metadata.docs.rs]
+all-features = true
+rustc-args = ["--cfg", "docsrs"]
+
+[target.wasm32-unknown-unknown]
+
+[target.wasm32-wasi]
