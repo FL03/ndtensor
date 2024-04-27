@@ -44,7 +44,7 @@ pub(crate) fn walk<S>(
 where
     S: RawData + RawDataClone,
 {
-    if let Some(&tg) = visited.get(&scope.id()) {
+    if let Some(&tg) = visited.get(scope.id()) {
         return (tg, nodes);
     }
     // track the gradient of the current node
@@ -73,7 +73,7 @@ where
     } else {
         nodes
     };
-    visited.insert(scope.id(), track);
+    visited.insert(*scope.id(), track);
     if track {
         nodes.push(scope);
     }

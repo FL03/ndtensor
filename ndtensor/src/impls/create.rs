@@ -7,7 +7,7 @@ use crate::TensorBase;
 use nd::*;
 use num::{Num, NumCast, One, Zero};
 
-impl<A, S> TensorBase<S, ndarray::Ix0>
+impl<A, S> TensorBase<S, Ix0>
 where
     S: Data<Elem = A>,
 {
@@ -16,7 +16,8 @@ where
         A: Clone,
         S: DataOwned,
     {
-        new!(ArrayBase::from_elem((), scalar))
+        let data = ArrayBase::from_elem((), scalar);
+        create!(data,)
     }
 }
 
@@ -24,71 +25,44 @@ impl<A, S> TensorBase<S>
 where
     S: RawData<Elem = A>,
 {
-    pub fn ndtensor<D>(data: ArrayBase<S, D>) -> TensorBase<S, ndarray::IxDyn>
+    pub fn ndtensor<D>(data: ArrayBase<S, D>) -> TensorBase<S, IxDyn>
     where
         D: Dimension,
     {
-        new!(data.into_dyn(), None)
+        let data = data.into_dyn();
+        create!(data,)
     }
 }
 
 impl<A, S, D> TensorBase<S, D>
 where
     D: Dimension,
-    S: RawData<Elem = A>,
+    S: DataOwned<Elem = A>,
 {
     pub fn arange(start: A, end: A, step: A) -> TensorBase<S, Ix1>
     where
         A: Clone + num::Float,
-        S: DataOwned,
     {
-        new!(ArrayBase::range(start, end, step))
+        Self::range(start, end, step)
     }
 
-    pub fn from_arr(data: ArrayBase<S, D>) -> Self {
-        new!(data)
-    }
-
-    pub fn from_shape_vec(shape: D, data: Vec<S::Elem>) -> Result<Self, TensorError>
+    pub fn default_like(&self) -> Self
     where
-        S: DataOwned,
+        A: Clone + Default,
     {
-        let data = ArrayBase::from_shape_vec(shape, data)?;
-        Ok(new!(data))
+        Self::default(self.dim())
     }
-
-    pub fn try_from_arr<D2>(data: ArrayBase<S, D2>) -> Result<Self, TensorError>
-    where
-        D2: Dimension,
-    {
-        let tensor = Self::from_arr(data.into_dimensionality::<D>()?);
-        Ok(tensor)
-    }
-
-    // map_method!(from_shape_vec(shape: D, data: Vec<S::Elem>) where S: DataOwned => Self);
-
-    map_method!(from_elem(shape: D, elem: A) where A: Clone, S: DataOwned);
 
     pub fn fill(shape: D, elem: A) -> Self
     where
         A: Clone,
-        S: DataOwned,
     {
-        new!(ArrayBase::from_elem(shape, elem))
-    }
-
-    pub fn linspace(start: A, end: A, num: usize) -> TensorBase<S, Ix1>
-    where
-        A: Clone + num::Float,
-        S: DataOwned,
-    {
-        new!(ArrayBase::linspace(start, end, num))
+        Self::from_elem(shape, elem)
     }
 
     pub fn linshape(shape: impl IntoDimension<Dim = D>) -> Result<TensorBase<S, D>, ShapeError>
     where
         A: Clone + num::Float,
-        S: DataOwned,
     {
         let dim = shape.into_dimension();
         let n = {
@@ -99,61 +73,40 @@ where
             .into_shape(dim)
     }
 
-    pub fn default<Sh>(shape: Sh) -> Self
-    where
-        A: Clone + Default,
-        S: DataOwned,
-        Sh: ShapeBuilder<Dim = D>,
-    {
-        new!(ArrayBase::default(shape))
-    }
-
-    pub fn default_like(&self) -> Self
-    where
-        A: Clone + Default,
-        S: DataOwned,
-    {
-        Self::default(self.dim())
-    }
-
-    pub fn ones<Sh>(shape: Sh) -> Self
-    where
-        A: Clone + One,
-        S: DataOwned,
-        Sh: ShapeBuilder<Dim = D>,
-    {
-        new!(ArrayBase::ones(shape))
-    }
-
     pub fn ones_like(&self) -> Self
     where
         A: Clone + One,
-        S: DataOwned,
     {
         Self::ones(self.dim())
-    }
-
-    pub fn zeros<Sh>(shape: Sh) -> Self
-    where
-        A: Clone + Zero,
-        S: DataOwned,
-        Sh: ShapeBuilder<Dim = D>,
-    {
-        new!(ArrayBase::zeros(shape))
     }
 
     pub fn zeros_like(&self) -> Self
     where
         A: Clone + Zero,
-        S: DataOwned,
     {
         Self::zeros(self.dim())
     }
+
+    ndcreate!(default<Sh>(shape: Sh) -> Self where A: Clone + Default, Sh: ShapeBuilder<Dim = D>);
+
+    ndcreate!(from_elem(shape: D, elem: A) -> Self where A: Clone);
+
+    ndcreate!(from_shape_vec(shape: D, data: Vec<S::Elem>) -> Result<Self, TensorError> where S: DataOwned);
+
+    ndcreate!(linspace(start: A, end: A, num: usize) -> TensorBase<S, Ix1> where A: num::Float);
+
+    ndcreate!(logspace(base: A, start: A, end: A, num: usize) -> TensorBase<S, Ix1> where A: num::Float);
+
+    ndcreate!(range(start: A, end: A, step: A) -> TensorBase<S, Ix1> where A: Clone + num::Float);
+
+    ndcreate!(ones<Sh>(shape: Sh) -> Self where A: Clone + One, Sh: ShapeBuilder<Dim = D>);
+
+    ndcreate!(zeros<Sh>(shape: Sh) -> Self where A: Clone + Zero, Sh: ShapeBuilder<Dim = D>);
 }
 
 impl<A> One for crate::Tensor<A, Ix0>
 where
-    A: Clone + One + core::ops::Mul<Output = A> + NumCast,
+    A: Clone + NumCast + One + core::ops::Mul<Output = A>,
 {
     fn one() -> Self {
         Self::from_scalar(A::one())

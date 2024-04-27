@@ -18,7 +18,7 @@ macro_rules! entry {
         entry!($ctx, $entry, $entry.$call())
     };
     ($ctx:expr, $entry:expr, $default:expr) => {
-        $ctx.entry($entry.id()).or_insert($default)
+        $ctx.entry(*$entry.id()).or_insert($default)
     };
 }
 
@@ -164,12 +164,12 @@ where
         Ok(store)
     }
     /// Compute the gradient of the tensor w.r.t. a particular variable (tensor)
-    pub fn grad(&self, target: TensorId) -> Result<crate::Tensor<A>, TensorError>
+    pub fn grad(&self, target: &TensorId) -> Result<crate::Tensor<A>, TensorError>
     where
         A: Scalar<Real = A>,
     {
         let store = self.backward()?;
-        let grad = store.get(&target).expect("Gradient not found");
+        let grad = store.get(target).expect("Gradient not found");
         Ok(grad.to_owned())
     }
 }

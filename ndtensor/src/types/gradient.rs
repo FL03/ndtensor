@@ -59,7 +59,7 @@ where
     }
 
     pub fn get_item(&self, item: &TensorBase<S>) -> Option<&TensorBase<S>> {
-        self.store.get(&item.id())
+        self.store.get(item.id())
     }
 
     pub fn get_item_mut(&mut self, key: &TensorId) -> Option<&mut TensorBase<S>> {
@@ -71,7 +71,7 @@ where
     }
 
     pub fn insert_item(&mut self, tensor: TensorBase<S>) -> Option<TensorBase<S>> {
-        self.store.insert(tensor.id(), tensor)
+        self.store.insert(*tensor.id(), tensor)
     }
 
     pub fn is_empty(&self) -> bool {
@@ -87,7 +87,7 @@ where
     }
 
     pub fn or_insert(&mut self, tensor: TensorBase<S>) -> &mut TensorBase<S> {
-        self.entry(tensor.id()).or_insert(tensor)
+        self.entry(*tensor.id()).or_insert(tensor)
     }
 
     pub fn or_insert_with<F>(&mut self, key: TensorId, default: F) -> &mut TensorBase<S>
@@ -102,7 +102,7 @@ where
         A: Clone + Default,
         S: DataOwned,
     {
-        self.entry(tensor.id()).or_insert(tensor.default_like())
+        self.entry(*tensor.id()).or_insert(tensor.default_like())
     }
 
     pub fn or_insert_ones(&mut self, tensor: &TensorBase<S>) -> &mut TensorBase<S>
@@ -110,7 +110,7 @@ where
         A: Clone + num::One,
         S: DataOwned,
     {
-        self.entry(tensor.id()).or_insert(tensor.ones_like())
+        self.entry(*tensor.id()).or_insert(tensor.ones_like())
     }
 
     pub fn or_insert_zeros(&mut self, tensor: &TensorBase<S>) -> &mut TensorBase<S>
@@ -118,7 +118,7 @@ where
         A: Clone + num::Zero,
         S: DataOwned,
     {
-        self.entry(tensor.id()).or_insert(tensor.zeros_like())
+        self.entry(*tensor.id()).or_insert(tensor.zeros_like())
     }
 
     pub fn remove(&mut self, key: &TensorId) -> Option<TensorBase<S>> {
@@ -126,7 +126,7 @@ where
     }
 
     pub fn remove_item(&mut self, item: &TensorBase<S>) -> Option<TensorBase<S>> {
-        self.store.remove(&item.id())
+        self.store.remove(item.id())
     }
 
     pub fn values(&self) -> Values<'_, TensorId, TensorBase<S>> {

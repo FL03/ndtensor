@@ -6,7 +6,6 @@ use crate::prelude::{ArrayBase, Dimension, IxDyn};
 use crate::Tensor;
 use acme::prelude::Scalar;
 use nd::{Ix0, RawData};
-use num::complex::ComplexFloat;
 
 pub trait IntoTensor {
     fn into_tensor<S, D>(self) -> crate::TensorBase<S, D>
@@ -39,4 +38,4 @@ pub trait ScalarExt: Scalar {
     }
 }
 
-impl<S> ScalarExt for S where S: ComplexFloat + Scalar {}
+impl<S> ScalarExt for S where S: Scalar {}

@@ -25,11 +25,6 @@ members = [
 ]
 resolver = "2"
 
-[workspace.dependencies]
-paste = "1"
-strum = { features = ["derive"], version = "0.26" }
-smart-default = "0.7"
-
 [profile.dev]
 codegen-units = 256
 debug = true

@@ -4,19 +4,6 @@
 */
 
 macro_rules! new {
-    {
-        data:$data:expr,
-        kind:$kind:expr,
-        op:$op:expr,
-    } => {
-        $crate::tensor::TensorBase {
-            id: $crate::prelude::TensorId::new(),
-            ctx: $crate::Context::new($kind),
-
-            data: $data,
-            op: $op,
-        }
-    };
     ($data:expr) => {
         $crate::TensorBase::new($data, None, false)
     };
@@ -25,6 +12,44 @@ macro_rules! new {
     };
     ($data:expr, $op:expr, $kind:expr) => {
         $crate::TensorBase::new($data, Some($op), $kind)
+    };
+}
+
+macro_rules! create {
+    ($data:expr, $($rest:tt)*) => {
+        create!(@base $data, $($rest)*)
+    };
+    (@base $data:expr,) => {
+        $crate::TensorBase {
+            id: $crate::TensorId::new(),
+            ctx: $crate::Context::new(false, $data.ndim()),
+            data: $data,
+            op: $crate::ops::TensorOp::none(),
+        }
+    };
+    (@base $data:expr, op:$op:expr) => {
+        $crate::TensorBase {
+            id: $crate::TensorId::new(),
+            ctx: $crate::Context::new(false, $data.ndim()),
+            data: $data,
+            op: $op,
+        }
+    };
+    (@base $data:expr, kind:$kind:expr, op:$op:expr) => {
+        $crate::TensorBase {
+            id: $crate::TensorId::new(),
+            ctx: $crate::Context::new($kind, $data.ndim()),
+            data: $data,
+            op: $op,
+        }
+    };
+    (@base $data:expr, id:$id:expr, ctx:$ctx:expr, op:$op:expr) => {
+        $crate::TensorBase {
+            id: $id,
+            ctx: $ctx,
+            data: $data,
+            op: $op,
+        }
     };
 }
 
@@ -79,68 +104,48 @@ macro_rules! fwd_view_body {
     };
 }
 
-macro_rules! map_method {
-    // ($method:ident) => {
-    //     pub fn $method(&self) -> Self {
-    //         new!(self.data.$method())
-    //     }
-    // };
-    (a $method:ident$($rest:tt),*) => {
-        map_method!(@impl $method$($rest)*);
-    };
-    ($method:ident($($field:ident:$ty:ty),*) where $($tb:ident: $($ext:ident)+),*) => {
-        map_method!(@impl $method($($field:$ty),*) where $($tb: $($ext)+),*);
-    };
-    ($method:ident($($field:ident:$ty:ty),*) where $($tb:ident: $($ext:ident)+),* $($rest:tt),*) => {
-        map_method!(@impl $method($($field:$ty),*) where $($tb: $($ext)+),*$($rest)*);
-    };
-    ($method:ident($($field:ident:$ty:ty),*) where $($tb:ident: $($ext:ident)+),* => $($res:ident),*) => {
-        map_method!(@impl $method($($field:$ty),*) where $($tb: $($ext)+),* => $($res:ident),*);
-    };
-    ($method:ident<$($t:ident),*>($($field:ident:$ty:ty),*) where $($tb:ident: $($ext:ident)++),*) => {
-        map_method!(@impl $method<$($t),*>($($field:$ty),*) where $($tb: $($ext)++),*);
-    };
-    (@impl $method:ident($($field:ident:$ty:ty),*) where $($tb:ident: $($ext:ident)+),* => $($res:ident),*) => {
-        pub fn $method($($field:$ty),*) -> Result<$res, TensorError>
-        where
-            $($tb: $($ext)++),*
+macro_rules! ndcreate {
+    ($method:ident$(<$($t:ident),*>)?($($field:ident:$ty:ty),*) -> Result<$self:ty, $err:ty> $($rest:tt)*) => {
+        pub fn $method$(<$($t),*>)?($($field:$ty),*) -> Result<$self, $err> $($rest)*
         {
-            new!(ArrayBase::$method($($field),*)?)
+            let arr = ArrayBase::$method($($field),*)?;
+            Ok(new!(arr))
         }
     };
-    (@impl $method:ident($($field:ident:$ty:ty),*) where $($tb:ident: $($ext:ident)+),*) => {
-        pub fn $method($($field:$ty),*) -> Self
-        where
-            $($tb: $($ext)++),*
+    ($method:ident$(<$($t:ident),*>)?($($field:ident:$ty:ty),*) -> $($rest:tt)*) => {
+        pub fn $method$(<$($t),*>)?($($field:$ty),*) -> $($rest)*
         {
             new!(ArrayBase::$method($($field),*))
         }
     };
-    (@impl $method:ident<$($t:ident),*>($($field:ident:$ty:ty),*) where $($tb:ident: $($ext:ident)++),*) => {
-        pub fn $method<$($t),*>($($field:$ty),*) -> Self
-        where
-            $($tb: $($ext)++),*
-        {
-            new!(self.data.$method($($field),*))
-        }
-    };
+
 }
 
-#[allow(unused_macros)]
-macro_rules! fwd_method {
-    ($method:ident) => {
-        pub fn $method(&self) -> Self {
-            new!(self.data.$method())
+macro_rules! apply_view {
+    ($call:ident$($rest:tt)*) => {
+        apply_view!(@impl $call$($rest)*);
+    };
+    (@impl $call:ident(self) -> $out:ty where $($rest:tt)*) => {
+        pub fn $call(self) -> $out where $($rest)* {
+            apply_view!(@apply $call(self))
         }
     };
-    (@impl $method:ident($($field:ident:$ty:ty),*) -> $res:ident where $(param:ident:$($tr:tt),*),*) => {
-        pub fn $method($($field:$ty),*) -> $res where $(param:$($tr),*),* {
-            new!(self.data.$method($($field),*))
+    (@impl $call:ident(&self) -> $out:ty where $($rest:tt)*) => {
+        pub fn $call(&self) -> $out where $($rest)* {
+            apply_view!(@apply $call(self))
         }
     };
-    (@impl $method:ident($($field:ident:$ty:ty),*)) => {
-        pub fn $method($($field:$ty),*) -> Self {
-            new!(self.data.$method($($field),*))
+    (@impl $call:ident(&mut self) -> $out:ty where $($rest:tt)*) => {
+        pub fn $call(&mut self) -> $out where $($rest)* {
+            apply_view!(@apply $call(self))
+        }
+    };
+    (@apply $call:ident($self:expr)) => {
+        $crate::TensorBase {
+            id: $self.id,
+            ctx: $self.ctx,
+            data: $self.data.$call(),
+            op: $self.op.$call(),
         }
     };
 }

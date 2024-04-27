@@ -71,6 +71,8 @@ smart-default = "0.7"
 strum = { features = ["derive"], version = "0.26"}
 
 [dependencies.acme]
+# branch = "v0.3.2-dev"
+# git = "https://github.com/FL03/acme.git"
 path = "../acme/acme"
 version = "0.3.2"
 

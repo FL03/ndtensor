@@ -23,8 +23,8 @@ fn test_backward() {
 
     let grad = res.backward().unwrap();
 
-    assert_eq!(grad[a.id()], Tensor::<f64, Ix2>::ones(shape).into_dyn());
-    assert_eq!(grad[b.id()], b.ones_like().into_dyn());
+    assert_eq!(grad[*a.id()], Tensor::<f64, Ix2>::ones(shape).into_dyn());
+    assert_eq!(grad[*b.id()], b.ones_like().into_dyn());
 }
 
 #[test]
@@ -40,8 +40,8 @@ fn test_mul() {
 
     let grad = res.backward().unwrap();
 
-    assert_eq!(grad[a.id()], b.to_dyn());
-    assert_eq!(grad[b.id()], a.to_dyn());
+    assert_eq!(grad[*a.id()], b.to_dyn());
+    assert_eq!(grad[*b.id()], a.to_dyn());
 }
 
 #[test]
@@ -57,8 +57,8 @@ fn test_sub() {
 
     let grad = res.backward().unwrap();
 
-    assert_eq!(grad[a.id()], Tensor::<f64, Ix2>::ones(shape).into_dyn());
-    assert_eq!(grad[b.id()], b.ones_like().into_dyn().neg());
+    assert_eq!(grad[*a.id()], Tensor::<f64, Ix2>::ones(shape).into_dyn());
+    assert_eq!(grad[*b.id()], b.ones_like().into_dyn().neg());
 }
 
 #[test]
@@ -74,8 +74,8 @@ fn test_div() {
 
     let grad = res.backward().unwrap();
 
-    assert_eq!(grad[a.id()], b.to_dyn());
-    assert_eq!(grad[b.id()], a.clone().neg().into_dyn());
+    assert_eq!(grad[*a.id()], b.to_dyn());
+    assert_eq!(grad[*b.id()], a.clone().neg().into_dyn());
 }
 
 #[test]
@@ -90,7 +90,7 @@ fn test_pow() {
 
     let grad = res.into_dyn().backward().unwrap();
     let exp = a.mul_scalar(2f64).into_dyn();
-    assert_eq!(grad[a.id()], exp);
+    assert_eq!(grad[*a.id()], exp);
 }
 
 #[test]
@@ -100,7 +100,7 @@ fn test_e() {
     let tensor = Tensor::<f64, Ix2>::linshape(shape.clone())
         .unwrap()
         .variable();
-    let id = tensor.id();
+    let id = *tensor.id();
 
     let ln = tensor.ln();
     let exp = tensor.exp();
@@ -116,7 +116,7 @@ fn test_trig() {
     let tensor = Tensor::<f64, Ix2>::linshape(shape.clone())
         .unwrap()
         .variable();
-    let id = tensor.id();
+    let id = *tensor.id();
 
     let a = tensor.cos();
     let b = tensor.sin();
@@ -162,9 +162,9 @@ fn test_chained() {
 
     let grad = res.backward().unwrap();
     let exp = Tensor::fill(dim.clone(), 5f64).into_dyn();
-    assert_eq!(grad[a.id()], exp);
+    assert_eq!(grad[*a.id()], exp);
     let exp = Tensor::fill(dim.clone(), 2f64).into_dyn();
-    assert_eq!(grad[b.id()], exp);
+    assert_eq!(grad[*b.id()], exp);
 }
 
 #[test]
