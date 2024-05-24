@@ -100,7 +100,7 @@ pub mod prelude {
     pub use crate::types::prelude::*;
     pub use crate::utils::*;
     pub use crate::{
-        ArcTensor, CowTensor, NdContainer, Tensor, TensorId, TensorView, TensorViewMut,
+        ArcTensor, CowTensor, Tensor, TensorId, TensorView, TensorViewMut,
     };
 
     #[allow(unused_imports)]
