@@ -2,27 +2,27 @@
     Appellation: context <module>
     Contrib: FL03 <jo3mccain@icloud.com>
 */
-use crate::TensorKind;
+use crate::Mode;
 
 use nd::{ArrayBase, Dimension, IntoDimension, RawData};
 
 #[derive(Clone, Copy, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct Context {
-    pub(crate) kind: TensorKind,
+    pub(crate) kind: Mode,
     pub(crate) rank: usize,
 }
 
 impl Context {
     pub fn new(kind: bool, rank: usize) -> Self {
         Self {
-            kind: TensorKind::new(kind),
+            kind: Mode::new(kind),
             rank,
         }
     }
 
     pub fn variable(mut self) -> Self {
-        self.kind = TensorKind::Variable;
+        self.kind = Mode::Variable;
         self
     }
 
@@ -43,12 +43,12 @@ impl Context {
 
     pub fn into_var(self) -> Self {
         Self {
-            kind: TensorKind::Variable,
+            kind: Mode::Variable,
             ..self
         }
     }
 
-    pub fn kind(&self) -> TensorKind {
+    pub fn kind(&self) -> Mode {
         self.kind
     }
 
@@ -60,7 +60,7 @@ impl Context {
         self.rank
     }
 
-    pub fn set_kind(&mut self, kind: TensorKind) {
+    pub fn set_kind(&mut self, kind: Mode) {
         self.kind = kind;
     }
 

@@ -2,11 +2,10 @@
     Appellation: default <test>
     Contrib: FL03 <jo3mccain@icloud.com>
 */
-#![cfg(test)]
 
 pub fn multiply<A, B, C>(x: A, y: B) -> C
 where
-    A: std::ops::Mul<B, Output = C>,
+    A: core::ops::Mul<B, Output = C>,
 {
     x * y
 }

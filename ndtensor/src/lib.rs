@@ -6,36 +6,41 @@
 //!
 //!
 #![crate_name = "ndtensor"]
+#![cfg_attr(not(feature = "std"), no_std)]
 
 extern crate acme;
+#[cfg(feature = "alloc")]
+extern crate alloc;
 extern crate ndarray as nd;
 
-pub use self::{context::Context, errors::*, specs::*, tensor::*, types::*, utils::*};
+pub use self::{context::Context, errors::*, tensor::*, traits::prelude::*, types::*, utils::*};
 
 pub(crate) mod context;
 pub(crate) mod errors;
 #[macro_use]
 pub(crate) mod macros;
-pub(crate) mod specs;
 pub(crate) mod tensor;
 pub(crate) mod utils;
 
+#[doc(hidden)]
+pub mod grad;
 pub mod ops;
+pub mod traits;
 
-pub(crate) mod impls {
+mod impls {
     #[cfg(feature = "approx")]
-    pub mod approx;
-    pub mod create;
-    pub mod grad;
-    pub mod ops;
-    pub mod reshape;
+    mod approx;
+    mod create;
+    mod grad;
+    mod ops;
+    mod reshape;
 
-    pub mod views {
-        pub mod dimensional;
-        pub mod numerical;
-        pub mod owned;
-        pub mod raw;
-        pub mod view;
+    mod views {
+        mod dimensional;
+        mod numerical;
+        mod owned;
+        mod raw;
+        mod view;
     }
 }
 
@@ -44,34 +49,55 @@ pub(crate) mod types {
 
     pub(crate) mod gradient;
     pub(crate) mod kinds;
+
+    pub(crate) mod prelude {
+        pub use super::gradient::TensorGrad;
+        pub use super::kinds::*;
+    }
 }
 
-use ndarray::{CowRepr, IxDyn, OwnedArcRepr, OwnedRepr, ViewRepr};
+macro_rules! tensor_ref {
+    ($($name:ident<$S:ident>$(($($rest:tt)*))? ),*) => {
+        $(
+            tensor_ref!(@impl $name<$S> $(:$($rest)*)?);
+        )*
+    };
 
-pub type ArcTensor<A, D = IxDyn> = TensorBase<OwnedArcRepr<A>, D>;
+    (@impl $name:ident<$S:ident>) => {
+        pub type $name<A = f64, D = ndarray::IxDyn, K = $crate::types::Normal> = $crate::tensor::TensorBase<ndarray::$S<A>, D, K>;
+    };
+    (@impl $name:ident<$S:ident>: 'a) => {
+        pub type $name<'a, A = f64, D = ndarray::IxDyn, K = $crate::types::Normal> = $crate::tensor::TensorBase<ndarray::$S<'a, A>, D, K>;
+    };
+    (@impl $name:ident<$S:ident>: &'a) => {
+        pub type $name<'a, A = f64, D = ndarray::IxDyn, K = $crate::types::Normal> = $crate::tensor::TensorBase<ndarray::$S<&'a A>, D, K>;
+    };
+    (@impl $name:ident<$S:ident>: &'a mut) => {
+        pub type $name<'a, A = f64, D = ndarray::IxDyn, K = $crate::types::Normal> = $crate::tensor::TensorBase<ndarray::$S<&'a mut A>, D, K>;
+    };
+    (@impl $name:ident<$S:ident>: *$ptr:ident) => {
+        pub type $name<A = f64, D = ndarray::IxDyn, K = $crate::types::Normal> = $crate::tensor::TensorBase<ndarray::$S<*$ptr A>, D, K>;
+    };
+}
 
-pub type CowTensor<'a, A, D = IxDyn> = TensorBase<CowRepr<'a, A>, D>;
-
-pub type RawTensorView<A, D = IxDyn> = TensorBase<ndarray::RawViewRepr<*const A>, D>;
-
-pub type RawTensorViewMut<A, D = IxDyn> = TensorBase<ndarray::RawViewRepr<*mut A>, D>;
-
-pub type Tensor<S, D = IxDyn> = TensorBase<OwnedRepr<S>, D>;
-
-pub type TensorView<'a, S, D = IxDyn> = TensorBase<ViewRepr<&'a S>, D>;
-
-pub type TensorViewMut<'a, S, D = IxDyn> = TensorBase<ViewRepr<&'a mut S>, D>;
+tensor_ref! {
+    ArcTensor<OwnedArcRepr>,
+    CowTensor<CowRepr>('a),
+    RawTensorView<RawViewRepr>(*const),
+    RawTensorViewMut<RawViewRepr>(*mut),
+    Tensor<OwnedRepr>,
+    TensorView<ViewRepr>(&'a),
+    TensorViewMut<ViewRepr>(&'a mut)
+}
 
 pub type TensorId = acme::id::AtomicId;
-
-pub type NdContainer<S> = ndarray::ArrayBase<S, ndarray::IxDyn>;
 
 pub mod prelude {
     pub use crate::errors::{TensorError, TensorResult};
     pub use crate::ops::{TensorExpr, TensorOp};
-    pub use crate::specs::*;
     pub use crate::tensor::TensorBase;
-    pub use crate::types::*;
+    pub use crate::traits::prelude::*;
+    pub use crate::types::prelude::*;
     pub use crate::utils::*;
     pub use crate::{
         ArcTensor, CowTensor, NdContainer, Tensor, TensorId, TensorView, TensorViewMut,

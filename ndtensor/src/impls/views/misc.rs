@@ -4,11 +4,11 @@
 */
 use crate::CowTensor;
 
-impl<'a, A, D> crate::CowTensor<'a, A, D>
+impl<'a, A, D, K> CowTensor<'a, A, D, K>
 where
     D: Dimension,
 {
     pub fn is_view(&self) -> bool {
-        self.data().is_view()
+        self.borrow().is_view()
     }
 }

@@ -4,7 +4,8 @@
 */
 use crate::prelude::{TensorExpr, TensorId};
 use crate::TensorBase;
-use nd::{Array, Dimension, IntoDimension, RawData, RawDataClone};
+use nd::prelude::*;
+use nd::{IntoDimension, RawData, RawDataClone};
 use num::Float;
 use std::collections::HashMap;
 
@@ -37,10 +38,10 @@ where
 }
 
 pub(crate) fn walk<S>(
-    scope: TensorBase<S>,
-    nodes: Vec<TensorBase<S>>,
+    scope: TensorBase<S, IxDyn>,
+    nodes: Vec<TensorBase<S, IxDyn>>,
     visited: &mut HashMap<TensorId, bool>,
-) -> (bool, Vec<TensorBase<S>>)
+) -> (bool, Vec<TensorBase<S, IxDyn>>)
 where
     S: RawData + RawDataClone,
 {

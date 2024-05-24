@@ -7,11 +7,13 @@
 extern crate ndarray as nd;
 extern crate ndtensor;
 
-use ndtensor::Tensor;
+use ndarray::prelude::*;
+use ndtensor::{Tensor, Variable};
 
 #[test]
 fn test_tensor() {
-    let tensor = Tensor::ndtensor(nd::array![[0f64, 1f64], [2f64, 3f64]]);
+    let tensor: Tensor<f64, IxDyn, Variable> =
+        Tensor::ndtensor(nd::array![[0f64, 1f64], [2f64, 3f64]]);
 
     assert!(tensor.op().is_none());
 }

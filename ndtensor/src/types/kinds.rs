@@ -4,6 +4,58 @@
 */
 use strum::{Display, EnumCount, EnumIs, EnumIter, EnumString, VariantNames};
 
+pub trait TensorMode: 'static {
+    const VARIABLE: bool;
+
+    fn of<T: 'static>() -> bool {
+        use core::any::TypeId;
+        TypeId::of::<T>() == TypeId::of::<Variable>()
+    }
+
+    fn is_variable(&self) -> bool {
+        Self::VARIABLE
+    }
+}
+
+macro_rules! toggle {
+    {type $T:ty, [$($name:ident($val:expr)),* $(,)?] $(,)?} => {
+        $(
+            toggle!(@impl $name<$T>: $val);
+        )*
+    };
+    (@impl $name:ident<$T:ty>: $val:expr) => {
+        #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+        #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
+        pub enum $name {}
+
+        impl $name {
+            pub const TOGGLE: $T = $val;
+
+            pub fn of<T: 'static>() -> bool {
+                use ::core::any::TypeId;
+                TypeId::of::<T>() == TypeId::of::<Self>()
+            }
+
+            pub fn get(&self) -> $T {
+                $val
+            }
+        }
+
+        impl TensorMode for $name {
+            const VARIABLE: bool = $val;
+        }
+    };
+
+}
+
+toggle! {
+    type bool,
+    [
+        Normal(false),
+        Variable(true)
+    ]
+}
+
 #[derive(
     Clone,
     Copy,
@@ -28,13 +80,13 @@ use strum::{Display, EnumCount, EnumIs, EnumIter, EnumString, VariantNames};
 )]
 #[repr(u8)]
 #[strum(serialize_all = "lowercase")]
-pub enum TensorKind {
+pub enum Mode {
     #[default]
     Normal = 0,
     Variable = 1,
 }
 
-impl TensorKind {
+impl Mode {
     pub fn new(kind: bool) -> Self {
         match kind {
             true => Self::Variable,
@@ -50,13 +102,13 @@ impl TensorKind {
     }
 }
 
-impl From<TensorKind> for usize {
-    fn from(mode: TensorKind) -> Self {
+impl From<Mode> for usize {
+    fn from(mode: Mode) -> Self {
         mode as usize
     }
 }
 
-impl From<usize> for TensorKind {
+impl From<usize> for Mode {
     fn from(mode: usize) -> Self {
         match mode % Self::COUNT {
             0 => Self::Normal,
@@ -65,7 +117,7 @@ impl From<usize> for TensorKind {
     }
 }
 
-impl From<bool> for TensorKind {
+impl From<bool> for Mode {
     fn from(is_variable: bool) -> Self {
         if is_variable {
             Self::Variable

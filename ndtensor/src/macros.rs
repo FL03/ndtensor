@@ -25,6 +25,7 @@ macro_rules! create {
             ctx: $crate::Context::new(false, $data.ndim()),
             data: $data,
             op: $crate::ops::TensorOp::none(),
+            _kind: ::core::marker::PhantomData::<K>,
         }
     };
     (@base $data:expr, op:$op:expr) => {
@@ -33,6 +34,7 @@ macro_rules! create {
             ctx: $crate::Context::new(false, $data.ndim()),
             data: $data,
             op: $op,
+            _kind: ::core::marker::PhantomData::<K>,
         }
     };
     (@base $data:expr, kind:$kind:expr, op:$op:expr) => {
@@ -41,6 +43,7 @@ macro_rules! create {
             ctx: $crate::Context::new($kind, $data.ndim()),
             data: $data,
             op: $op,
+            _kind: ::core::marker::PhantomData::<K>,
         }
     };
     (@base $data:expr, id:$id:expr, ctx:$ctx:expr, op:$op:expr) => {
@@ -49,6 +52,7 @@ macro_rules! create {
             ctx: $ctx,
             data: $data,
             op: $op,
+            _kind: ::core::marker::PhantomData::<K>,
         }
     };
 }
@@ -113,8 +117,7 @@ macro_rules! ndcreate {
         }
     };
     ($method:ident$(<$($t:ident),*>)?($($field:ident:$ty:ty),*) -> $($rest:tt)*) => {
-        pub fn $method$(<$($t),*>)?($($field:$ty),*) -> $($rest)*
-        {
+        pub fn $method$(<$($t),*>)?($($field:$ty),*) -> $($rest)* {
             new!(ArrayBase::$method($($field),*))
         }
     };
@@ -146,6 +149,7 @@ macro_rules! apply_view {
             ctx: $self.ctx,
             data: $self.data.$call(),
             op: $self.op.$call(),
+            _kind: ::core::marker::PhantomData::<K>,
         }
     };
 }

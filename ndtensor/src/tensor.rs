@@ -2,15 +2,16 @@
     Appellation: tensor <mod>
     Contrib: FL03 <jo3mccain@icloud.com>
 */
-use crate::prelude::{TensorError, TensorExpr, TensorId, TensorOp};
+use crate::prelude::{Normal, TensorError, TensorExpr, TensorId, TensorMode, TensorOp, Variable};
 use crate::Context;
 use core::borrow::{Borrow, BorrowMut};
+use core::marker::PhantomData;
 use nd::*;
 
 /// This is the base tensor object, providing additional functionality to the wrapped [ArrayBase](ndarray::ArrayBase).
 ///
 ///
-pub struct TensorBase<S, D = IxDyn>
+pub struct TensorBase<S, D = IxDyn, K = Normal>
 where
     D: Dimension,
     S: RawData,
@@ -19,11 +20,13 @@ where
     pub(crate) ctx: Context,
     pub(crate) data: ArrayBase<S, D>,
     pub(crate) op: TensorOp<S>,
+    pub(crate) _kind: PhantomData<K>,
 }
 
-impl<A, S, D> TensorBase<S, D>
+impl<A, S, D, K> TensorBase<S, D, K>
 where
     D: Dimension,
+    K: TensorMode,
     S: RawData<Elem = A>,
 {
     pub(crate) fn new(data: ArrayBase<S, D>, op: Option<TensorExpr<S>>, kind: bool) -> Self {
@@ -70,7 +73,7 @@ where
         self.data().axes()
     }
 
-    pub fn boxed(self) -> Box<TensorBase<S, D>> {
+    pub fn boxed(self) -> Box<Self> {
         Box::new(self)
     }
     /// Get an immutable reference to the [context](Context) of the tensor.
@@ -90,7 +93,7 @@ where
         &mut self.data
     }
 
-    pub fn detach(&self) -> crate::TensorView<'_, A, D>
+    pub fn detach(&self) -> crate::TensorView<'_, A, D, K>
     where
         S: Data,
     {
@@ -99,17 +102,18 @@ where
             ctx: self.ctx,
             data: self.data.view(),
             op: TensorOp::none(),
+            _kind: PhantomData::<K>,
         }
     }
 
-    pub fn diag(&self) -> crate::TensorView<'_, A, Ix1>
+    pub fn diag(&self) -> crate::TensorView<'_, A, Ix1, K>
     where
         S: Data,
     {
         TensorBase::new(self.data().diag(), None, false)
     }
 
-    pub fn diag_mut(&mut self) -> crate::TensorViewMut<'_, A, Ix1>
+    pub fn diag_mut(&mut self) -> crate::TensorViewMut<'_, A, Ix1, K>
     where
         S: DataMut,
     {
@@ -125,7 +129,7 @@ where
         &self.id
     }
 
-    pub fn into_dimensionality<D2>(self) -> Result<TensorBase<S, D2>, TensorError>
+    pub fn into_dimensionality<D2>(self) -> Result<TensorBase<S, D2, K>, TensorError>
     where
         D2: Dimension,
     {
@@ -135,19 +139,21 @@ where
             ctx: self.ctx,
             data,
             op: self.op,
+            _kind: PhantomData::<K>,
         })
     }
 
-    pub fn into_dyn(self) -> TensorBase<S, IxDyn> {
+    pub fn into_dyn(self) -> TensorBase<S, IxDyn, K> {
         TensorBase {
             id: self.id,
             ctx: self.ctx,
             data: self.data.into_dyn(),
             op: self.op,
+            _kind: PhantomData::<K>,
         }
     }
 
-    pub fn to_dyn(&self) -> TensorBase<S, IxDyn>
+    pub fn to_dyn(&self) -> TensorBase<S, IxDyn, K>
     where
         S: RawDataClone,
     {
@@ -156,6 +162,7 @@ where
             ctx: self.ctx,
             data: self.data().clone().into_dyn(),
             op: self.op.clone(),
+            _kind: PhantomData::<K>,
         }
     }
 
@@ -197,7 +204,7 @@ where
         self.data().shape()
     }
 
-    pub fn slice<I>(&self, info: I) -> crate::TensorView<'_, A, I::OutDim>
+    pub fn slice<I>(&self, info: I) -> crate::TensorView<'_, A, I::OutDim, K>
     where
         I: SliceArg<D>,
         S: Data,
@@ -208,10 +215,11 @@ where
             ctx: self.ctx,
             data,
             op: self.op.view(),
+            _kind: PhantomData::<K>,
         }
     }
 
-    pub fn slice_mut<I>(&mut self, info: I) -> crate::TensorViewMut<'_, A, I::OutDim>
+    pub fn slice_mut<I>(&mut self, info: I) -> crate::TensorViewMut<'_, A, I::OutDim, K>
     where
         I: SliceArg<D>,
         S: DataMut,
@@ -222,6 +230,7 @@ where
             ctx: self.ctx,
             data,
             op: self.op.view_mut(),
+            _kind: PhantomData::<K>,
         }
     }
 
@@ -234,58 +243,79 @@ where
         self.op.as_ref()
     }
 
-    pub fn variable(mut self) -> Self {
-        self.ctx = self.ctx.into_var();
-        self
-    }
-
-    pub fn with_ctx(self, ctx: Context) -> Self {
-        TensorBase {
-            id: self.id,
-            ctx,
-            data: self.data,
-            op: self.op,
-        }
-    }
-
-    pub fn with_data(self, data: ArrayBase<S, D>) -> Self {
+    pub fn into_variable(self) -> TensorBase<S, D, Variable> {
         TensorBase {
             id: self.id,
             ctx: self.ctx,
-            data,
+            data: self.data,
             op: self.op,
+            _kind: PhantomData::<Variable>,
         }
+    }
+
+    pub fn with_ctx(self, ctx: Context) -> Self {
+        TensorBase { ctx, ..self }
+    }
+
+    pub fn with_data(self, data: ArrayBase<S, D>) -> Self {
+        TensorBase { data, ..self }
     }
 
     pub fn with_op(self, op: impl Into<TensorOp<S>>) -> Self {
         TensorBase {
-            id: self.id,
-            ctx: self.ctx,
-            data: self.data,
             op: op.into(),
+            ..self
         }
     }
 
-    apply_view!(cell_view(&mut self) -> crate::TensorView<'_, MathCell<A>, D> where S: DataMut);
+    apply_view!(cell_view(&mut self) -> crate::TensorView<'_, MathCell<A>, D, K> where S: DataMut);
 
-    apply_view!(into_owned(self) -> crate::Tensor<A, D> where A: Clone, S: DataOwned);
+    apply_view!(into_owned(self) -> crate::Tensor<A, D, K> where A: Clone, S: DataOwned);
 
-    apply_view!(to_owned(&self) -> crate::Tensor<A, D> where A: Clone, S: Data);
+    apply_view!(to_owned(&self) -> crate::Tensor<A, D, K> where A: Clone, S: Data);
 
-    apply_view!(into_shared(self) -> crate::ArcTensor<A, D> where S: DataOwned);
+    apply_view!(into_shared(self) -> crate::ArcTensor<A, D, K> where S: DataOwned);
 
-    apply_view!(to_shared(&self) -> crate::ArcTensor<A, D> where A: Clone, S: Data);
+    apply_view!(to_shared(&self) -> crate::ArcTensor<A, D, K> where A: Clone, S: Data);
 
-    apply_view!(raw_view(&self) -> crate::RawTensorView<A, D> where S: RawData);
+    apply_view!(raw_view(&self) -> crate::RawTensorView<A, D, K> where S: RawData);
 
-    apply_view!(raw_view_mut(&mut self) -> crate::RawTensorViewMut<A, D> where S: RawDataMut);
+    apply_view!(raw_view_mut(&mut self) -> crate::RawTensorViewMut<A, D, K> where S: RawDataMut);
 
-    apply_view!(view(&self) -> crate::TensorView<'_, A, D> where S: Data);
+    apply_view!(view(&self) -> crate::TensorView<'_, A, D, K> where S: Data);
 
-    apply_view!(view_mut(&mut self) -> crate::TensorViewMut<'_, A, D> where S: DataMut);
+    apply_view!(view_mut(&mut self) -> crate::TensorViewMut<'_, A, D, K> where S: DataMut);
 }
 
-impl<S, D> Borrow<ArrayBase<S, D>> for TensorBase<S, D>
+impl<A, S, D> TensorBase<S, D, Normal>
+where
+    D: Dimension,
+    S: RawData<Elem = A>,
+{
+    pub fn normal() -> Self
+    where
+        A: Default,
+        S: DataOwned,
+    {
+        Self::from_arr(Default::default())
+    }
+}
+
+impl<A, S, D> TensorBase<S, D, Variable>
+where
+    D: Dimension,
+    S: RawData<Elem = A>,
+{
+    pub fn variable() -> Self
+    where
+        A: Default,
+        S: DataOwned,
+    {
+        Self::from_arr(Default::default())
+    }
+}
+
+impl<S, D, K> Borrow<ArrayBase<S, D>> for TensorBase<S, D, K>
 where
     D: Dimension,
     S: RawData,
@@ -295,7 +325,7 @@ where
     }
 }
 
-impl<S, D> BorrowMut<ArrayBase<S, D>> for TensorBase<S, D>
+impl<S, D, K> BorrowMut<ArrayBase<S, D>> for TensorBase<S, D, K>
 where
     D: Dimension,
     S: RawData,
@@ -305,7 +335,7 @@ where
     }
 }
 
-impl<S, D> Clone for TensorBase<S, D>
+impl<S, D, K> Clone for TensorBase<S, D, K>
 where
     D: Dimension,
     S: RawDataClone,
@@ -313,14 +343,15 @@ where
     fn clone(&self) -> Self {
         TensorBase {
             id: self.id,
-            ctx: self.ctx,
+            ctx: self.ctx.clone(),
             data: self.data.clone(),
             op: self.op.clone(),
+            _kind: PhantomData::<K>,
         }
     }
 }
 
-impl<A, S, D> PartialEq for TensorBase<S, D>
+impl<A, S, D, K> PartialEq for TensorBase<S, D, K>
 where
     D: Dimension,
     S: Data<Elem = A>,
@@ -331,18 +362,19 @@ where
     }
 }
 
-impl<S, D, T> PartialEq<T> for TensorBase<S, D>
+impl<S, D, K, U> PartialEq<U> for TensorBase<S, D, K>
 where
     D: Dimension,
+    K: TensorMode,
     S: Data,
-    ArrayBase<S, D>: PartialEq<T>,
+    ArrayBase<S, D>: PartialEq<U>,
 {
-    fn eq(&self, other: &T) -> bool {
+    fn eq(&self, other: &U) -> bool {
         self.data().eq(other)
     }
 }
 
-impl<S, D, I> core::ops::Index<I> for TensorBase<S, D>
+impl<S, D, K, I> core::ops::Index<I> for TensorBase<S, D, K>
 where
     D: Dimension,
     I: NdIndex<D>,
@@ -355,7 +387,7 @@ where
     }
 }
 
-impl<S, D, I> core::ops::IndexMut<I> for TensorBase<S, D>
+impl<S, D, K, I> core::ops::IndexMut<I> for TensorBase<S, D, K>
 where
     D: Dimension,
     I: NdIndex<D>,
@@ -373,10 +405,11 @@ macro_rules! impl_fmt {
         )*
     };
     (@impl $trait:ident($($fmt:tt)*)) => {
-        impl<A, S, D> core::fmt::$trait for TensorBase<S, D>
+        impl<A, S, D, K> core::fmt::$trait for TensorBase<S, D, K>
         where
             A: core::fmt::$trait,
             D: Dimension,
+            K: $crate::types::TensorMode,
             S: Data<Elem = A>,
         {
             fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {

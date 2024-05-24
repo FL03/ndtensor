@@ -2,13 +2,14 @@
     Appellation: create <impls>
     Contrib: FL03 <jo3mccain@icloud.com>
 */
-use crate::prelude::TensorError;
+use crate::prelude::{TensorError, TensorMode};
 use crate::TensorBase;
 use nd::*;
 use num::{Num, NumCast, One, Zero};
 
-impl<A, S> TensorBase<S, Ix0>
+impl<A, S, K> TensorBase<S, Ix0, K>
 where
+    K: TensorMode,
     S: Data<Elem = A>,
 {
     pub fn from_scalar(scalar: A) -> Self
@@ -21,31 +22,26 @@ where
     }
 }
 
-impl<A, S> TensorBase<S>
+impl<A, S, K> TensorBase<S, IxDyn, K>
 where
     S: RawData<Elem = A>,
 {
-    pub fn ndtensor<D>(data: ArrayBase<S, D>) -> TensorBase<S, IxDyn>
+    pub fn ndtensor<D>(data: ArrayBase<S, D>) -> TensorBase<S, IxDyn, K>
     where
         D: Dimension,
+        K: TensorMode,
     {
         let data = data.into_dyn();
         create!(data,)
     }
 }
 
-impl<A, S, D> TensorBase<S, D>
+impl<A, S, D, K> TensorBase<S, D, K>
 where
     D: Dimension,
+    K: TensorMode,
     S: DataOwned<Elem = A>,
 {
-    pub fn arange(start: A, end: A, step: A) -> TensorBase<S, Ix1>
-    where
-        A: Clone + num::Float,
-    {
-        Self::range(start, end, step)
-    }
-
     pub fn default_like(&self) -> Self
     where
         A: Clone + Default,
@@ -60,7 +56,7 @@ where
         Self::from_elem(shape, elem)
     }
 
-    pub fn linshape(shape: impl IntoDimension<Dim = D>) -> Result<TensorBase<S, D>, ShapeError>
+    pub fn linshape(shape: impl IntoDimension<Dim = D>) -> Result<TensorBase<S, D, K>, ShapeError>
     where
         A: Clone + num::Float,
     {
@@ -69,7 +65,7 @@ where
             let tmp = dim.as_array_view();
             tmp.product()
         };
-        TensorBase::<S, ndarray::Ix1>::linspace(A::zero(), A::from(n).unwrap() - A::one(), n)
+        TensorBase::<S, ndarray::Ix1, K>::linspace(A::zero(), A::from(n).unwrap() - A::one(), n)
             .into_shape(dim)
     }
 
@@ -93,29 +89,60 @@ where
 
     ndcreate!(from_shape_vec(shape: D, data: Vec<S::Elem>) -> Result<Self, TensorError> where S: DataOwned);
 
-    ndcreate!(linspace(start: A, end: A, num: usize) -> TensorBase<S, Ix1> where A: num::Float);
-
-    ndcreate!(logspace(base: A, start: A, end: A, num: usize) -> TensorBase<S, Ix1> where A: num::Float);
-
-    ndcreate!(range(start: A, end: A, step: A) -> TensorBase<S, Ix1> where A: Clone + num::Float);
-
     ndcreate!(ones<Sh>(shape: Sh) -> Self where A: Clone + One, Sh: ShapeBuilder<Dim = D>);
 
     ndcreate!(zeros<Sh>(shape: Sh) -> Self where A: Clone + Zero, Sh: ShapeBuilder<Dim = D>);
 }
 
-impl<A> One for crate::Tensor<A, Ix0>
+impl<A, S, K> TensorBase<S, Ix1, K>
+where
+    K: TensorMode,
+    S: DataOwned<Elem = A>,
+{
+    pub fn arange(start: A, end: A, step: A) -> Self
+    where
+        A: Clone + num::Float,
+    {
+        Self::range(start, end, step)
+    }
+
+    ndcreate!(linspace(start: A, end: A, num: usize) -> Self where A: num::Float);
+
+    ndcreate!(logspace(base: A, start: A, end: A, num: usize) -> Self where A: num::Float);
+
+    ndcreate!(range(start: A, end: A, step: A) -> Self where A: Clone + num::Float);
+}
+
+impl<A, S, K> TensorBase<S, Ix2, K>
+where
+    K: TensorMode,
+    S: DataOwned<Elem = A>,
+{
+    ndcreate!(eye(n: usize) -> Self where A: Clone + Zero + One, S: DataMut);
+
+    pub fn identity(n: usize) -> Self
+    where
+        A: Clone + Zero + One,
+        S: DataMut,
+    {
+        Self::eye(n)
+    }
+}
+
+impl<A> One for crate::Tensor<A, Ix0, crate::Variable>
 where
     A: Clone + NumCast + One + core::ops::Mul<Output = A>,
+    // K: TensorMode,
 {
     fn one() -> Self {
         Self::from_scalar(A::one())
     }
 }
 
-impl<A> Zero for crate::Tensor<A, Ix0>
+impl<A> Zero for crate::Tensor<A, Ix0, crate::Variable>
 where
     A: Clone + Zero + NumCast,
+    // K: TensorMode,
 {
     fn zero() -> Self {
         Self::from_scalar(A::zero())
@@ -126,9 +153,10 @@ where
     }
 }
 
-impl<A> Num for crate::Tensor<A, Ix0>
+impl<A> Num for crate::Tensor<A, Ix0, crate::Variable>
 where
     A: Clone + Num + NumCast,
+    // K: TensorMode,
 {
     type FromStrRadixErr = A::FromStrRadixErr;
 

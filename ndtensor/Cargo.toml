@@ -1,5 +1,6 @@
 [package]
 authors.workspace = true
+build = "build.rs"
 categories.workspace = true
 description.workspace = true
 edition.workspace = true
@@ -17,23 +18,33 @@ default = [
     "std",
 ]
 
+full = [
+    "default",
+    "serde"
+]
+
+alloc = [
+    "num/alloc",
+    "serde?/alloc",
+]
+
 approx = [
     "dep:approx",
     "ndarray/approx-0_5",
 ]
 
+blas = [
+    "ndarray/blas"
+]
+
 std = [
     "acme/std",
-    "ndarray/std"
+    "ndarray/std",
+    "num/std",
 ]
 
 serde = [
     "dep:serde",
-    "serde-ext"
-]
-
-serde-ext = [
-    "dep:serde_json",
     "ndarray/serde-1",
     "acme/serde",
 ]
@@ -60,22 +71,33 @@ required-features = ["approx", "std"]
 [build-dependencies]
 
 [dependencies]
-approx = { optional = true, version = "0.5" }
-itertools = "0.12"
-ndarray = "0.15"
-num = "0.4"
+itertools = "0.13"
 paste = "1"
-serde = { features = ["derive"], optional = true, version = "1" }
-serde_json = { optional = true, version = "1" }
 smart-default = "0.7"
 strum = { features = ["derive"], version = "0.26"}
 
 [dependencies.acme]
-# branch = "v0.3.2-dev"
-# git = "https://github.com/FL03/acme.git"
-path = "../acme/acme"
+branch = "v0.3.2-dev"
+git = "https://github.com/FL03/acme.git"
 version = "0.3.2"
 
+[dependencies.approx]
+optional = true
+version = "0.5"
+
+[dependencies.serde]
+default-features = false
+features = ["derive"]
+optional = true
+version = "1"
+
+[dependencies.ndarray]
+default-features = false
+version = "0.15"
+
+[dependencies.num]
+default-features = false
+version = "0.4"
 
 [dev-dependencies]
 lazy_static = "1"

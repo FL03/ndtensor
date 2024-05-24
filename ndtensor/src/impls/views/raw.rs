@@ -13,25 +13,28 @@ macro_rules! impl_raw_tensor_view {
         )*
     };
     (@impl $target:ident) => {
-        impl<A, D> $target<A, D>
+        impl<A, D, K> $target<A, D, K>
         where
             D: Dimension,
+            K: $crate::types::TensorMode,
         {
-            pub unsafe fn cast<B>(self) -> $target<B, D> {
+            pub unsafe fn cast<B>(self) -> $target<B, D, K> {
                 TensorBase {
                     id: self.id,
                     ctx: self.ctx,
                     data: self.data.cast::<B>(),
                     op: self.op.cast(),
+                    _kind: ::core::marker::PhantomData::<K>,
                 }
             }
 
-            pub unsafe fn deref_into_view<'a>(self) -> TensorView<'a, A, D> {
+            pub unsafe fn deref_into_view<'a>(self) -> TensorView<'a, A, D, K> {
                 TensorBase {
                     id: self.id,
                     ctx: self.ctx,
                     data: self.data.deref_into_view(),
                     op: self.op.deref_into_view(),
+                    _kind: ::core::marker::PhantomData::<K>,
                 }
             }
         }
