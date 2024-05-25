@@ -20,6 +20,19 @@ where
     Transpose(Box<Expr<S, D>>),
 }
 
+macro_rules! fwd_view_body {
+    ($self:ident, $method:ident) => {
+        fwd_expr_call!($self.$method().boxed())
+    };
+    (&$self:ident, $method:ident) => {
+        fwd_expr_call!(&$self.as_ref().$method().boxed())
+    };
+    (&mut $self:ident, $method:ident) => {
+        fwd_expr_call!(&$self.as_mut().$method().boxed())
+    };
+}
+
+
 macro_rules! map_views {
     ($call:ident<$view:ident> where $($arg:ident:$($bound:ident)*),*) => {
         pub fn $call(self) -> TensorExpr<$view<A>, $view<B>> where $($arg: $($bound)*),* {

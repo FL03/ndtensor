@@ -3,9 +3,9 @@
     Contrib: FL03 <jo3mccain@icloud.com>
 */
 use crate::prelude::{Tensor, TensorBase, TensorMode};
-// use acme::prelude::Scalar;
 use nd::*;
-use num::complex::ComplexFloat;
+use nd::linalg::Dot;
+use num::complex::{Complex, ComplexFloat};
 
 macro_rules! binop {
     ($(($method:ident, $op:tt)),*) => {
@@ -17,7 +17,7 @@ macro_rules! binop {
     (@loop $method:ident, $op:tt) => {
         pub fn $method(&self, other: &Self) -> Tensor<A, D, K> {
             let data = self.data() $op other.data();
-            new!(data)
+            data.into()
         }
     };
 }
@@ -31,7 +31,7 @@ macro_rules! unop {
     (@loop $method:ident) => {
         pub fn $method(&self) -> Tensor<A, D, K> {
             let data = self.data().mapv(|x| x.$method());
-            new!(data)
+            data.into()
         }
     };
 }
@@ -46,7 +46,7 @@ macro_rules! scalar_op {
     (@loop $method:ident, $variant:ident, $op:tt) => {
         pub fn $method(&self, other: A) -> Tensor<A, D, K> {
             let data = self.data() $op other;
-            new!(data)
+            data.into()
         }
     };
 
@@ -54,45 +54,45 @@ macro_rules! scalar_op {
 
 impl<A, S, D, K> TensorBase<S, D, K>
 where
-    A: ComplexFloat + ScalarOperand,
+    A: ComplexFloat + LinalgScalar + ScalarOperand,
     D: Dimension,
     K: TensorMode,
     S: Data<Elem = A> + DataOwned + RawDataClone,
 {
-    pub fn abs(&self) -> Tensor<<A as ComplexFloat>::Real, D, K> {
+    pub fn abs(&self) -> Tensor<A::Real, D, K> {
         let data = self.data().mapv(|x| x.abs());
         // let op = TensorExpr::<S, S>::unary(self.clone().into_dyn().boxed(), UnaryOp::Abs);
         // TensorBase::from_arr(data).with_op(op.into_owned())
         TensorBase::from_arr(data)
     }
 
-    pub fn powi(&self, n: i32) -> Tensor<A, D, K> {
-        let data = self.data().mapv(|x| x.powi(n));
-        // let op = TensorExpr::<S, S>::binary(
-        //     self.clone().into_dyn().boxed(),
-        //     TensorBase::from_scalar(A::from(n).unwrap())
-        //         .into_dyn()
-        //         .boxed(),
-        //     BinaryOp::pow(),
-        // );
-        // TensorBase::from_arr(data).with_op(op.into_owned())
-        TensorBase::from_arr(data)
+    pub fn matmul<B, T, E, U>(&self, rhs: &U) -> Tensor<B, E, K>
+    where
+        B: LinalgScalar,
+        E: Dimension,
+        ArrayBase<S, D>: Dot<U, Output = Array<B, E>>,
+    {
+        self.data().dot(&rhs).into()
     }
 
-    pub fn powf(&self, n: <A as ComplexFloat>::Real) -> Tensor<A, D, K> {
-        let data = self.data().mapv(|x| x.powf(n));
-        // let op = TensorExpr::<S, S>::binary(
-        //     self.clone().into_dyn().boxed(),
-        //     TensorBase::from_scalar(A::from(n).unwrap())
-        //         .into_dyn()
-        //         .boxed(),
-        //     BinaryOp::pow(),
-        // );
-        TensorBase::from_arr(data)
+    pub fn powc(&self, n: Complex<A::Real>) -> Tensor<Complex<A::Real>, D, K> {
+        self.mapv(|x| x.powc(n))
+    }
+
+    pub fn powi(&self, n: i32) -> Tensor<A, D, K> {
+        self.mapv(|x| x.powi(n))
+    }
+
+    pub fn powf(&self, n: A::Real) -> Tensor<A, D, K> {
+        self.mapv(|x| x.powf(n))
+    }
+
+    pub fn cubed(&self) -> Tensor<A, D, K> {
+        self.powi(3)
     }
 
     pub fn sqrd(&self) -> Tensor<A, D, K> {
-        TensorBase::from_arr(self.data().mapv(|x| x * x))
+        self.powi(2)
     }
 
     binop!(
@@ -136,12 +136,7 @@ macro_rules! impl_unary_op {
             type Output = $crate::Tensor<A, D, K>;
 
             fn $call(self) -> Self::Output {
-                let data = self.data().mapv(|x| x.$call());
-                // let op = TensorExpr::unary(
-                //     self.into_dyn().into_owned().boxed(),
-                //     UnaryOp::$call(),
-                // );
-                new!(data)
+                self.mapv(|x| x.$call())
             }
         }
 
@@ -155,12 +150,7 @@ macro_rules! impl_unary_op {
             type Output = $crate::Tensor<A, D, K>;
 
             fn $call(self) -> Self::Output {
-                let data = self.data().mapv(|x| x.$call());
-                // let op = TensorExpr::unary(
-                //     self.to_owned().into_dyn().boxed(),
-                //     UnaryOp::$call(),
-                // );
-                new!(data)
+                self.mapv(|x| x.$call())
             }
         }
     };

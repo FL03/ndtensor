@@ -13,15 +13,18 @@ extern crate acme;
 extern crate alloc;
 extern crate ndarray as nd;
 
-pub use self::{context::Context, errors::*, tensor::*, traits::prelude::*, types::*, utils::*};
+pub use self::{context::Context, tensor::TensorBase, traits::prelude::*, types::*, utils::*};
+pub use self::error::{TensorError, TensorResult};
 
-pub(crate) mod context;
-pub(crate) mod errors;
 #[macro_use]
 pub(crate) mod macros;
+pub(crate) mod context;
 pub(crate) mod tensor;
 pub(crate) mod utils;
 
+
+
+pub mod error;
 #[doc(hidden)]
 pub mod grad;
 pub mod traits;
@@ -30,6 +33,7 @@ mod impls {
     #[cfg(feature = "approx")]
     mod approx;
     mod create;
+    mod linalg;
     mod ops;
     mod reshape;
     mod tensor;
@@ -92,7 +96,7 @@ tensor_ref! {
 pub type TensorId = acme::id::AtomicId;
 
 pub mod prelude {
-    pub use crate::errors::{TensorError, TensorResult};
+    pub use crate::error::prelude::*;
     pub use crate::tensor::TensorBase;
     pub use crate::traits::prelude::*;
     pub use crate::types::prelude::*;

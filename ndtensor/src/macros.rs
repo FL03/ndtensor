@@ -22,53 +22,30 @@ macro_rules! new {
     };
 }
 
-macro_rules! fwd_expr_call {
-    ($self:ident.$($rest:tt)*) => {
-        match $self {
-            $crate::grad::ops::TensorExpr::Binary { lhs, rhs, op } => $crate::grad::ops::TensorExpr::Binary {
-                lhs: lhs.$($rest)*,
-                rhs: rhs.$($rest)*,
-                op,
-            },
-            $crate::grad::ops::TensorExpr::Unary { recv, op } => $crate::grad::ops::TensorExpr::Unary {
-                recv: recv.$($rest)*,
-                op,
-            },
-            $crate::grad::ops::TensorExpr::Matmul { lhs, rhs } => $crate::grad::ops::TensorExpr::Matmul {
-                lhs: lhs.$($rest)*,
-                rhs: rhs.$($rest)*,
-            },
-            $crate::grad::ops::TensorExpr::Transpose(recv) => $crate::grad::ops::TensorExpr::Transpose(recv.$($rest)*),
+macro_rules! apply_view {
+    ($call:ident$($rest:tt)*) => {
+        apply_view!(@impl $call$($rest)*);
+    };
+    (@impl $call:ident(self) -> $out:ty where $($rest:tt)*) => {
+        pub fn $call(self) -> $out where K: Copy, $($rest)* {
+            apply_view!(@apply $call(self))
         }
     };
-    (&$self:ident.$($rest:tt)*) => {
-        match $self {
-            $crate::grad::ops::TensorExpr::Binary { lhs, rhs, op } => $crate::grad::ops::TensorExpr::Binary {
-                lhs: lhs.$($rest)*,
-                rhs: rhs.$($rest)*,
-                op: *op,
-            },
-            $crate::grad::ops::TensorExpr::Unary { recv, op } => $crate::grad::ops::TensorExpr::Unary {
-                recv: recv.$($rest)*,
-                op: *op,
-            },
-            $crate::grad::ops::TensorExpr::Matmul { lhs, rhs } => $crate::grad::ops::TensorExpr::Matmul {
-                lhs: lhs.$($rest)*,
-                rhs: rhs.$($rest)*,
-            },
-            $crate::grad::ops::TensorExpr::Transpose(recv) => $crate::grad::ops::TensorExpr::Transpose(recv.$($rest)*),
+    (@impl $call:ident(&self) -> $out:ty where $($rest:tt)*) => {
+        pub fn $call(&self) -> $out where K: Copy, $($rest)* {
+            apply_view!(@apply $call(self))
         }
     };
-}
-
-macro_rules! fwd_view_body {
-    ($self:ident, $method:ident) => {
-        fwd_expr_call!($self.$method().boxed())
+    (@impl $call:ident(&mut self) -> $out:ty where $($rest:tt)*) => {
+        pub fn $call(&mut self) -> $out where K: Copy, $($rest)* {
+            apply_view!(@apply $call(self))
+        }
     };
-    (&$self:ident, $method:ident) => {
-        fwd_expr_call!(&$self.as_ref().$method().boxed())
-    };
-    (&mut $self:ident, $method:ident) => {
-        fwd_expr_call!(&$self.as_mut().$method().boxed())
+    (@apply $call:ident($self:expr)) => {
+        $crate::TensorBase {
+            id: $self.id,
+            ctx: $self.ctx,
+            data: $self.data.$call(),
+        }
     };
 }

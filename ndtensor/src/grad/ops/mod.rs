@@ -108,4 +108,45 @@ macro_rules! apply_raw {
 
 }
 
+
+macro_rules! fwd_expr_call {
+    ($self:ident.$($rest:tt)*) => {
+        match $self {
+            $crate::grad::ops::TensorExpr::Binary { lhs, rhs, op } => $crate::grad::ops::TensorExpr::Binary {
+                lhs: lhs.$($rest)*,
+                rhs: rhs.$($rest)*,
+                op,
+            },
+            $crate::grad::ops::TensorExpr::Unary { recv, op } => $crate::grad::ops::TensorExpr::Unary {
+                recv: recv.$($rest)*,
+                op,
+            },
+            $crate::grad::ops::TensorExpr::Matmul { lhs, rhs } => $crate::grad::ops::TensorExpr::Matmul {
+                lhs: lhs.$($rest)*,
+                rhs: rhs.$($rest)*,
+            },
+            $crate::grad::ops::TensorExpr::Transpose(recv) => $crate::grad::ops::TensorExpr::Transpose(recv.$($rest)*),
+        }
+    };
+    (&$self:ident.$($rest:tt)*) => {
+        match $self {
+            $crate::grad::ops::TensorExpr::Binary { lhs, rhs, op } => $crate::grad::ops::TensorExpr::Binary {
+                lhs: lhs.$($rest)*,
+                rhs: rhs.$($rest)*,
+                op: *op,
+            },
+            $crate::grad::ops::TensorExpr::Unary { recv, op } => $crate::grad::ops::TensorExpr::Unary {
+                recv: recv.$($rest)*,
+                op: *op,
+            },
+            $crate::grad::ops::TensorExpr::Matmul { lhs, rhs } => $crate::grad::ops::TensorExpr::Matmul {
+                lhs: lhs.$($rest)*,
+                rhs: rhs.$($rest)*,
+            },
+            $crate::grad::ops::TensorExpr::Transpose(recv) => $crate::grad::ops::TensorExpr::Transpose(recv.$($rest)*),
+        }
+    };
+}
+
+
 apply_raw!(*const, *mut);

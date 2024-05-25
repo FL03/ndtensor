@@ -4,7 +4,7 @@
 */
 use ndarray::ShapeError;
 use strum::{Display, EnumCount, EnumIs, VariantNames};
-pub type TensorResult<T = ()> = core::result::Result<T, TensorError>;
+
 
 #[derive(
     Clone, Debug, Display, EnumCount, EnumIs, Eq, Hash, Ord, PartialEq, PartialOrd, VariantNames,

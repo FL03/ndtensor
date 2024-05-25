@@ -145,12 +145,12 @@ where
         self.data_mut().map_inplace(f);
     }
     /// Applies a closure to each element of the tensor and returns a new tensor with the results.
-    pub fn mapv<B, F>(&mut self, f: F) -> crate::Tensor<B, D, K>
+    pub fn mapv<B, F>(&self, f: F) -> crate::Tensor<B, D, K>
     where
         A: Clone,
         F: FnMut(A) -> B,
         K: TensorMode,
-        S: DataMut,
+        S: Data,
     {
         self.data().mapv(f).into()
     }

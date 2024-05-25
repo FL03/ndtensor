@@ -49,6 +49,8 @@ serde = [
     "acme/serde",
 ]
 
+exp = []
+
 [lib]
 bench = true
 crate-type = ["cdylib", "rlib"]

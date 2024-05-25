@@ -33,8 +33,7 @@ macro_rules! ndbuilder {
             Sh: ndarray::ShapeBuilder<Dim = D>,
             $($rest)*
         {
-            let arr = ArrayBase::$method($($field),*)?;
-            $crate::TensorBase::from_arr(arr)
+            ArrayBase::$method(shape).into()
         }
     };
 }

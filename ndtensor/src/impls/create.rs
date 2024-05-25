@@ -4,6 +4,7 @@
 */
 use crate::prelude::{TensorError, TensorMode};
 use crate::TensorBase;
+use core::ops::Mul;
 use nd::*;
 use num::{Num, NumCast, One, Zero};
 
@@ -17,8 +18,7 @@ where
         A: Clone,
         S: DataOwned,
     {
-        let data = ArrayBase::from_elem((), scalar);
-        Self::new(data)
+        ArrayBase::from_elem((), scalar).into()
     }
 }
 
@@ -31,7 +31,7 @@ where
     where
         D: Dimension,
     {
-        Self::new(data.into_dyn())
+        data.into_dyn().into()
     }
 }
 
@@ -130,8 +130,7 @@ where
 
 impl<A> One for crate::Tensor<A, Ix0, crate::Variable>
 where
-    A: Clone + NumCast + One + core::ops::Mul<Output = A>,
-    // K: TensorMode,
+    A: Clone + NumCast + One + Mul<Output = A>,
 {
     fn one() -> Self {
         Self::from_scalar(A::one())
@@ -141,7 +140,6 @@ where
 impl<A> Zero for crate::Tensor<A, Ix0, crate::Variable>
 where
     A: Clone + Zero + NumCast,
-    // K: TensorMode,
 {
     fn zero() -> Self {
         Self::from_scalar(A::zero())
@@ -155,7 +153,6 @@ where
 impl<A> Num for crate::Tensor<A, Ix0, crate::Variable>
 where
     A: Clone + Num + NumCast,
-    // K: TensorMode,
 {
     type FromStrRadixErr = A::FromStrRadixErr;
 
