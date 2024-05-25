@@ -24,16 +24,15 @@ pub(crate) mod utils;
 
 #[doc(hidden)]
 pub mod grad;
-pub mod ops;
 pub mod traits;
 
 mod impls {
     #[cfg(feature = "approx")]
     mod approx;
     mod create;
-    mod grad;
     mod ops;
     mod reshape;
+    mod tensor;
 
     mod views {
         mod dimensional;
@@ -94,14 +93,11 @@ pub type TensorId = acme::id::AtomicId;
 
 pub mod prelude {
     pub use crate::errors::{TensorError, TensorResult};
-    pub use crate::ops::{TensorExpr, TensorOp};
     pub use crate::tensor::TensorBase;
     pub use crate::traits::prelude::*;
     pub use crate::types::prelude::*;
     pub use crate::utils::*;
-    pub use crate::{
-        ArcTensor, CowTensor, Tensor, TensorId, TensorView, TensorViewMut,
-    };
+    pub use crate::{ArcTensor, CowTensor, Tensor, TensorId, TensorView, TensorViewMut};
 
     #[allow(unused_imports)]
     pub(crate) use ndarray::{

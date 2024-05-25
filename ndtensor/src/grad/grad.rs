@@ -22,6 +22,50 @@ macro_rules! entry {
     };
 }
 
+// pub(crate) fn walk<S>(
+//     scope: TensorBase<S, IxDyn>,
+//     nodes: Vec<TensorBase<S, IxDyn>>,
+//     visited: &mut HashMap<TensorId, bool>,
+// ) -> (bool, Vec<TensorBase<S, IxDyn>>)
+// where
+//     S: RawData + RawDataClone,
+// {
+//     if let Some(&tg) = visited.get(scope.id()) {
+//         return (tg, nodes);
+//     }
+//     // track the gradient of the current node
+//     let mut track = false;
+//     // recursively call on the children nodes
+//     let mut nodes = if scope.is_variable() {
+//         // Do not call recursively on the "leaf" nodes.
+//         track = true;
+//         nodes
+//     } else if let Some(op) = scope.op() {
+//         match op {
+//             TensorExpr::Binary { lhs, rhs, .. } => {
+//                 let (tg, nodes) = walk(*lhs.clone(), nodes, visited);
+//                 track |= tg;
+//                 let (tg, nodes) = walk(*rhs.clone(), nodes, visited);
+//                 track |= tg;
+//                 nodes
+//             }
+//             TensorExpr::Unary { recv, .. } => {
+//                 let (tg, nodes) = walk(*recv.clone(), nodes, visited);
+//                 track |= tg;
+//                 nodes
+//             }
+//             _ => nodes,
+//         }
+//     } else {
+//         nodes
+//     };
+//     visited.insert(*scope.id(), track);
+//     if track {
+//         nodes.push(scope);
+//     }
+//     (track, nodes)
+// }
+
 impl<A, S, D> TensorBase<S, D>
 where
     A: Scalar + ScalarOperand,

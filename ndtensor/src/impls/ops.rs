@@ -2,9 +2,10 @@
     Appellation: ops <mod>
     Contrib: FL03 <jo3mccain@icloud.com>
 */
-use crate::prelude::{TensorBase, TensorMode};
-use acme::prelude::Scalar;
+use crate::prelude::{Tensor, TensorBase, TensorMode};
+// use acme::prelude::Scalar;
 use nd::*;
+use num::complex::ComplexFloat;
 
 macro_rules! binop {
     ($(($method:ident, $op:tt)),*) => {
@@ -14,13 +15,8 @@ macro_rules! binop {
     };
 
     (@loop $method:ident, $op:tt) => {
-        pub fn $method(&self, other: &Self) -> $crate::Tensor<A, D, K> {
+        pub fn $method(&self, other: &Self) -> Tensor<A, D, K> {
             let data = self.data() $op other.data();
-            // let op = TensorExpr::binary(
-            //     self.to_owned().into_dyn().boxed(),
-            //     other.to_owned().into_dyn().boxed(),
-            //     BinaryOp::$method(),
-            // );
             new!(data)
         }
     };
@@ -33,9 +29,8 @@ macro_rules! unop {
         )*
     };
     (@loop $method:ident) => {
-        pub fn $method(&self) -> $crate::Tensor<A, D, K> {
+        pub fn $method(&self) -> Tensor<A, D, K> {
             let data = self.data().mapv(|x| x.$method());
-            // let op = TensorExpr::unary(self.to_owned().into_dyn().boxed(), UnaryOp::$method());
             new!(data)
         }
     };
@@ -49,13 +44,8 @@ macro_rules! scalar_op {
     };
 
     (@loop $method:ident, $variant:ident, $op:tt) => {
-        pub fn $method(&self, other: A) -> $crate::Tensor<A, D, K> {
+        pub fn $method(&self, other: A) -> Tensor<A, D, K> {
             let data = self.data() $op other;
-            // let op = TensorExpr::binary(
-            //     self.to_owned().into_dyn().boxed(),
-            //     crate::Tensor::from_scalar(other).into_dyn().boxed(),
-            //     BinaryOp::$variant(),
-            // );
             new!(data)
         }
     };
@@ -64,22 +54,19 @@ macro_rules! scalar_op {
 
 impl<A, S, D, K> TensorBase<S, D, K>
 where
-    A: Scalar + ScalarOperand,
+    A: ComplexFloat + ScalarOperand,
     D: Dimension,
     K: TensorMode,
     S: Data<Elem = A> + DataOwned + RawDataClone,
 {
-    pub fn abs(&self) -> crate::Tensor<<A as Scalar>::Real, D, K>
-    where
-        A: Scalar<Real = A>,
-    {
+    pub fn abs(&self) -> Tensor<<A as ComplexFloat>::Real, D, K> {
         let data = self.data().mapv(|x| x.abs());
         // let op = TensorExpr::<S, S>::unary(self.clone().into_dyn().boxed(), UnaryOp::Abs);
         // TensorBase::from_arr(data).with_op(op.into_owned())
         TensorBase::from_arr(data)
     }
 
-    pub fn powi(&self, n: i32) -> crate::Tensor<A, D, K> {
+    pub fn powi(&self, n: i32) -> Tensor<A, D, K> {
         let data = self.data().mapv(|x| x.powi(n));
         // let op = TensorExpr::<S, S>::binary(
         //     self.clone().into_dyn().boxed(),
@@ -92,7 +79,7 @@ where
         TensorBase::from_arr(data)
     }
 
-    pub fn powf(&self, n: <A as Scalar>::Real) -> crate::Tensor<A, D, K> {
+    pub fn powf(&self, n: <A as ComplexFloat>::Real) -> Tensor<A, D, K> {
         let data = self.data().mapv(|x| x.powf(n));
         // let op = TensorExpr::<S, S>::binary(
         //     self.clone().into_dyn().boxed(),
@@ -103,6 +90,11 @@ where
         // );
         TensorBase::from_arr(data)
     }
+
+    pub fn sqrd(&self) -> Tensor<A, D, K> {
+        TensorBase::from_arr(self.data().mapv(|x| x * x))
+    }
+
     binop!(
         (add, +),
         (div, /),
@@ -120,8 +112,7 @@ where
     );
 
     unop!(
-        acos, acosh, asin, asinh, atan, cos, cosh, exp, ln, neg, recip, sin, sinh, sqr, sqrt, tan,
-        tanh
+        acos, acosh, asin, asinh, atan, cos, cosh, exp, ln, neg, recip, sin, sinh, sqrt, tan, tanh
     );
 }
 

@@ -18,21 +18,20 @@ where
         S: DataOwned,
     {
         let data = ArrayBase::from_elem((), scalar);
-        create!(data,)
+        Self::new(data)
     }
 }
 
 impl<A, S, K> TensorBase<S, IxDyn, K>
 where
+    K: TensorMode,
     S: RawData<Elem = A>,
 {
     pub fn ndtensor<D>(data: ArrayBase<S, D>) -> TensorBase<S, IxDyn, K>
     where
         D: Dimension,
-        K: TensorMode,
     {
-        let data = data.into_dyn();
-        create!(data,)
+        Self::new(data.into_dyn())
     }
 }
 

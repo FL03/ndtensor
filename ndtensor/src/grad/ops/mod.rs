@@ -7,7 +7,7 @@ pub use self::{expr::*, wrapper::TensorOp};
 pub(crate) mod expr;
 pub(crate) mod wrapper;
 
-use nd::{OwnedArcRepr, OwnedRepr, RawData};
+use nd::*;
 
 pub type OwnedOp<A, B> = TensorOp<OwnedRepr<A>, OwnedRepr<B>>;
 pub type ArcOp<A, B> = TensorOp<OwnedArcRepr<A>, OwnedArcRepr<B>>;
@@ -77,3 +77,35 @@ where
         self.as_mut()
     }
 }
+
+macro_rules! apply_raw {
+    ($(*$id:ident),*) => {
+        $(
+            apply_raw!(@impl *$id);
+        )*
+    };
+    (@impl *$id:ident) => {
+        impl<A, B> TensorExpr<RawViewRepr<*$id A>, RawViewRepr<*$id B>> {
+            pub unsafe fn cast<C>(self) -> TensorExpr<RawViewRepr<*$id C>, RawViewRepr<*$id C>> {
+                fwd_expr_call!(self.cast().boxed())
+            }
+
+            pub unsafe fn deref_into_view<'a>(self) -> TensorExpr<ViewRepr<&'a A>, ViewRepr<&'a B>> {
+                fwd_expr_call!(self.deref_into_view().boxed())
+            }
+        }
+
+        impl<A, B> TensorOp<RawViewRepr<*$id A>, RawViewRepr<*$id B>> {
+            pub unsafe fn cast<C>(self) -> TensorOp<RawViewRepr<*$id C>, RawViewRepr<*$id C>> {
+                TensorOp(self.0.map(|expr| expr.cast()))
+            }
+
+            pub unsafe fn deref_into_view<'a>(self) -> TensorOp<ViewRepr<&'a A>, ViewRepr<&'a B>> {
+                TensorOp(self.0.map(|expr| expr.deref_into_view()))
+            }
+        }
+    };
+
+}
+
+apply_raw!(*const, *mut);

@@ -8,7 +8,7 @@ use nd::{ArrayBase, Data, Dimension};
 
 use approx::{AbsDiffEq, RelativeEq};
 
-impl<A, S, D> AbsDiffEq for TensorBase<S, D>
+impl<A, S, D, K> AbsDiffEq for TensorBase<S, D, K>
 where
     A: AbsDiffEq<Epsilon = A>,
     D: Dimension,
@@ -22,11 +22,11 @@ where
     }
 
     fn abs_diff_eq(&self, other: &Self, epsilon: A) -> bool {
-        self.data().abs_diff_eq(&other.data, epsilon)
+        self.data.abs_diff_eq(&other.data, epsilon)
     }
 }
 
-impl<A, S, D> AbsDiffEq<ArrayBase<S, D>> for TensorBase<S, D>
+impl<A, S, D, K> AbsDiffEq<ArrayBase<S, D>> for TensorBase<S, D, K>
 where
     A: AbsDiffEq<Epsilon = A>,
     D: Dimension,
@@ -40,11 +40,11 @@ where
     }
 
     fn abs_diff_eq(&self, other: &ArrayBase<S, D>, epsilon: A) -> bool {
-        self.data().abs_diff_eq(&other, epsilon)
+        self.data.abs_diff_eq(&other, epsilon)
     }
 }
 
-impl<A, S, D> RelativeEq for TensorBase<S, D>
+impl<A, S, D, K> RelativeEq for TensorBase<S, D, K>
 where
     A: RelativeEq<Epsilon = A>,
     D: Dimension,
@@ -56,11 +56,11 @@ where
     }
 
     fn relative_eq(&self, other: &Self, epsilon: A, max_relative: A) -> bool {
-        self.data().relative_eq(&other.data, epsilon, max_relative)
+        self.data.relative_eq(&other.data, epsilon, max_relative)
     }
 }
 
-impl<A, S, D> RelativeEq<ArrayBase<S, D>> for TensorBase<S, D>
+impl<A, S, D, K> RelativeEq<ArrayBase<S, D>> for TensorBase<S, D, K>
 where
     A: RelativeEq<Epsilon = A>,
     D: Dimension,
@@ -72,6 +72,6 @@ where
     }
 
     fn relative_eq(&self, other: &ArrayBase<S, D>, epsilon: A, max_relative: A) -> bool {
-        self.data().relative_eq(&other, epsilon, max_relative)
+        self.data.relative_eq(&other, epsilon, max_relative)
     }
 }

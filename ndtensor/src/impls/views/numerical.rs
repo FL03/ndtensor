@@ -3,8 +3,9 @@
     Contrib: FL03 <jo3mccain@icloud.com>
 */
 use crate::{TensorBase, TensorMode};
-use core::marker::PhantomData;
-use nd::{Data, Dimension};
+use nd::prelude::*;
+use nd::Data;
+use num::complex::ComplexFloat;
 use num::traits::{NumCast, ToPrimitive};
 
 impl<A, S, D, K> TensorBase<S, D, K>
@@ -22,9 +23,16 @@ where
         TensorBase {
             id: self.id,
             ctx: self.ctx,
-            data: self.data.mapv(|x| B::from(x).unwrap()),
-            op: self.op.numcast(),
-            _kind: PhantomData::<K>,
+            data: self.data().mapv(|x| B::from(x).unwrap()),
         }
     }
+}
+
+impl<A, S, D, K> TensorBase<S, D, K>
+where
+    A: ComplexFloat,
+    D: Dimension,
+    K: TensorMode,
+    S: Data<Elem = A>,
+{
 }

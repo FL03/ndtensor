@@ -2,21 +2,19 @@
     Appellation: utils <module>
     Contrib: FL03 <jo3mccain@icloud.com>
 */
-use crate::prelude::{TensorExpr, TensorId};
-use crate::TensorBase;
 use nd::prelude::*;
-use nd::{IntoDimension, RawData, RawDataClone};
 use num::Float;
-use std::collections::HashMap;
 
 /// Hashes a dimension using the [DefaultHasher].
 #[cfg(feature = "std")]
-pub fn hash_dim<D>(dim: impl IntoDimension<Dim = D>) -> u64
+pub fn hash_dim<D, Sh>(shape: Sh) -> u64
 where
     D: Dimension,
+    Sh: ShapeBuilder<Dim = D>,
 {
     use std::hash::{DefaultHasher, Hash, Hasher};
-    let dim = dim.into_dimension();
+    let shape = shape.into_shape();
+    let dim = shape.raw_dim().clone();
     let mut s = DefaultHasher::new();
     for i in dim.slice() {
         i.hash(&mut s);
@@ -24,59 +22,19 @@ where
     s.finish()
 }
 
-pub fn linarr<A, D>(dim: impl IntoDimension<Dim = D>) -> Array<A, D>
+/// Generates a new [Array] using evenly spaced values between [0, n-1);
+/// where n is the product of the dimensions.
+pub fn linarr<A, D, Sh>(shape: Sh) -> Array<A, D>
 where
     A: Float,
     D: Dimension,
+    Sh: ShapeBuilder<Dim = D>,
 {
-    let dim = dim.into_dimension();
+    let shape = shape.into_shape();
+    let dim = shape.raw_dim().clone();
     let dview = dim.as_array_view();
     let n = dview.product();
     Array::linspace(A::zero(), A::from(n).unwrap() - A::one(), n)
         .into_shape(dim)
         .expect("linspace err")
-}
-
-pub(crate) fn walk<S>(
-    scope: TensorBase<S, IxDyn>,
-    nodes: Vec<TensorBase<S, IxDyn>>,
-    visited: &mut HashMap<TensorId, bool>,
-) -> (bool, Vec<TensorBase<S, IxDyn>>)
-where
-    S: RawData + RawDataClone,
-{
-    if let Some(&tg) = visited.get(scope.id()) {
-        return (tg, nodes);
-    }
-    // track the gradient of the current node
-    let mut track = false;
-    // recursively call on the children nodes
-    let mut nodes = if scope.is_variable() {
-        // Do not call recursively on the "leaf" nodes.
-        track = true;
-        nodes
-    } else if let Some(op) = scope.op() {
-        match op {
-            TensorExpr::Binary { lhs, rhs, .. } => {
-                let (tg, nodes) = walk(*lhs.clone(), nodes, visited);
-                track |= tg;
-                let (tg, nodes) = walk(*rhs.clone(), nodes, visited);
-                track |= tg;
-                nodes
-            }
-            TensorExpr::Unary { recv, .. } => {
-                let (tg, nodes) = walk(*recv.clone(), nodes, visited);
-                track |= tg;
-                nodes
-            }
-            _ => nodes,
-        }
-    } else {
-        nodes
-    };
-    visited.insert(*scope.id(), track);
-    if track {
-        nodes.push(scope);
-    }
-    (track, nodes)
 }

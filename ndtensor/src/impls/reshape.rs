@@ -3,7 +3,6 @@
     Contrib: FL03 <jo3mccain@icloud.com>
 */
 use crate::{TensorBase, TensorMode};
-use core::marker::PhantomData;
 use nd::{Data, DataOwned, Dimension, IntoDimension, RawData, ShapeArg, ShapeError};
 
 impl<A, S, D, K> TensorBase<S, D, K>
@@ -25,8 +24,6 @@ where
             id: self.id,
             ctx,
             data,
-            op: self.op.view(),
-            _kind: PhantomData::<K>,
         })
     }
     /// Transforms the tensor into a new shape.
@@ -41,8 +38,6 @@ where
             id: self.id,
             ctx,
             data,
-            op: self.op,
-            _kind: PhantomData::<K>,
         })
     }
     ///
@@ -68,9 +63,6 @@ where
             id: self.id,
             ctx: self.ctx,
             data: self.data.t(),
-            // op: TensorExpr::transpose(self.view().into_dyn().boxed()).into(),
-            op: crate::ops::TensorOp::none(),
-            _kind: PhantomData::<K>,
         }
     }
 
@@ -88,8 +80,6 @@ where
             id: self.id,
             ctx,
             data,
-            op: self.op.to_owned(),
-            _kind: PhantomData::<K>,
         })
     }
 }

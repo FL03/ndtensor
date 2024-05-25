@@ -4,10 +4,10 @@
 */
 use strum::{Display, EnumCount, EnumIs, EnumIter, EnumString, VariantNames};
 
-pub trait TensorMode: 'static {
+pub trait TensorMode: Copy + 'static {
     const VARIABLE: bool;
 
-    fn of<T: 'static>() -> bool {
+    fn is<T: 'static>() -> bool {
         use core::any::TypeId;
         TypeId::of::<T>() == TypeId::of::<Variable>()
     }
@@ -31,7 +31,7 @@ macro_rules! toggle {
         impl $name {
             pub const TOGGLE: $T = $val;
 
-            pub fn of<T: 'static>() -> bool {
+            pub fn is<T: 'static>() -> bool {
                 use ::core::any::TypeId;
                 TypeId::of::<T>() == TypeId::of::<Self>()
             }
@@ -87,10 +87,22 @@ pub enum Mode {
 }
 
 impl Mode {
-    pub fn new(kind: bool) -> Self {
-        match kind {
-            true => Self::Variable,
-            false => Self::Normal,
+    pub fn new<K>() -> Self
+    where
+        K: 'static,
+    {
+        if Variable::is::<K>() {
+            Self::Variable
+        } else {
+            Self::Normal
+        }
+    }
+
+    pub fn from_bool(kind: bool) -> Self {
+        if kind {
+            Self::Variable
+        } else {
+            Self::Normal
         }
     }
     pub fn normal() -> Self {
@@ -119,10 +131,6 @@ impl From<usize> for Mode {
 
 impl From<bool> for Mode {
     fn from(is_variable: bool) -> Self {
-        if is_variable {
-            Self::Variable
-        } else {
-            Self::Normal
-        }
+        Self::from_bool(is_variable)
     }
 }

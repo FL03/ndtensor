@@ -23,5 +23,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Publish (${{ env.CARGO_PACKAGE_NAME }})
+      - name: publish (${{ env.CARGO_PACKAGE_NAME }})
         run: cargo publish --all-features -v -p ${{ env.CARGO_PACKAGE_NAME }} --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
