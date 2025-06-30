@@ -9,7 +9,7 @@
 //! ### Features
 //!
 //! The crate supports various extensions or integrations that enhance its functionality. These
-//! features can be enabled in your `Cargo.toml` file by specifying them under the `features` 
+//! features can be enabled in your `Cargo.toml` file by specifying them under the `features`
 //! section. Here are some of the available features:
 //!
 //! - `anyhow`: Enables the use of the `anyhow` crate for error handling.

@@ -12,7 +12,7 @@ pub type TensorView<'a, A, D = Ix2> = TensorBase<ViewRepr<&'a A>, D>;
 /// a type alias for a [`TensorBase`] with a mutable view representation
 pub type TensorViewMut<'a, A, D = Ix2> = TensorBase<ViewRepr<&'a mut A>, D>;
 
-/// a type alias for a [`TensorBase`] setup to use a shared, thread-safe internal 
+/// a type alias for a [`TensorBase`] setup to use a shared, thread-safe internal
 /// representation of the data.
 pub type ArcTensor<A, D = Ix2> = TensorBase<OwnedArcRepr<A>, D>;
 /// a type alias for a [`TensorBase`] using a _borrowed_ layout

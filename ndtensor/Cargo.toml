@@ -67,6 +67,7 @@ serde_json = { optional = true, workspace = true }
 tracing = { optional = true, workspace = true }
 
 [dev-dependencies]
+criterion = { features = ["plotters"], workspace = true }
 lazy_static = { workspace = true }
 
 [features]
@@ -79,7 +80,6 @@ full = [
     "anyhow",
     "approx",
     "complex",
-    "init",
     "json",
     "rand",
     "serde",
@@ -128,7 +128,6 @@ wasm = [
 ]
 # ************* [FF:Dependencies] *************
 alloc = [
-    "concision-init?/alloc",
     "num/alloc",
     "serde?/alloc",
     "serde_json?/alloc",

@@ -35,17 +35,19 @@ scsys-derive = { default-features = false, version = "0.3.1" }
 # benchmarking
 criterion = { version = "0.6" }
 # concurrency & parallelism
-crossbeam = { default-features = false, version = "0.8" }
+# crossbeam = { default-features = false, version = "0.8" }
 rayon = { default-features = false, version = "1" }
-# data & serialization
+rayon-core = { default-features = false, version = "1" }
+# data-structures
+ndarray = { default-features = false, version = "0.16" }
+ndarray-linalg = { default-features = false, version = "0.17" }
+ndarray-stats = "0.6"
+# serialization
 serde = { default-features = false, features = ["derive"], version = "1" }
 serde_derive = { default-features = false, version = "1" }
 serde_json = { default-features = false, version = "1" }
 # math
 approx = { version = "0.5" }
-ndarray = { default-features = false, version = "0.16" }
-ndarray-linalg = { default-features = false, version = "0.17" }
-ndarray-stats = "0.6"
 num = { default-features = false, version = "0.4" }
 num-complex = { default-features = false, version = "0.4" }
 num-traits = { default-features = false, version = "0.2" }
@@ -54,7 +56,6 @@ rustfft = { version = "6" }
 getrandom = { default-features = false, version = "0.3" }
 rand = { default-features = false, version = "0.9" }
 rand_distr = { default-features = false, version = "0.5" }
-uuid = { default-features = false, version = "1" }
 # errors
 anyhow = { default-features = false, version = "1" }
 thiserror = { default-features = false, version = "2" }

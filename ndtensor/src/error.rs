@@ -19,9 +19,6 @@ pub(crate) type Result<T> = core::result::Result<T, TensorError>;
 pub enum TensorError {
     #[error(transparent)]
     ShapeError(#[from] ndarray::ShapeError),
-    #[error(transparent)]
-    #[cfg(feature = "cnc_init")]
-    InitError(#[from] concision_init::error::InitError),
     #[cfg(feature = "anyhow")]
     #[error(transparent)]
     AnyError(#[from] anyhow::Error),
@@ -64,6 +61,7 @@ impl TensorError {
         Self::Unknown(error.to_string())
     }
 }
+
 #[cfg(feature = "alloc")]
 impl From<String> for TensorError {
     fn from(value: String) -> Self {
