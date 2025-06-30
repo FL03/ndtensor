@@ -1,24 +1,17 @@
 /*
-    Appellation: tensor <test>
-    Contrib: FL03 <jo3mccain@icloud.com>
+    Appellation: Tensor <test>
+    Contrib: @FL03
 */
-#![cfg(test)]
-
-extern crate ndarray as nd;
-extern crate ndtensor;
-
 use ndtensor::Tensor;
 
 #[test]
-fn test_tensor() {
-    let tensor = Tensor::ndtensor(nd::array![[0f64, 1f64], [2f64, 3f64]]);
-
-    assert!(tensor.op().is_none());
-}
-
-#[test]
-fn test_index() {
-    let tensor = Tensor::<f64, nd::Ix3>::linshape((3, 3, 3)).unwrap();
-
-    assert_eq!(tensor[[0, 0, 0]], 0f64);
+fn test_ones_and_zeros() {
+    // weights retain the given shape (d_in, d_out)
+    // bias retains the shape (d_out,)
+    let ones = Tensor::<f64>::ones((3, 4));
+    assert_eq!(ones.dim(), (3, 4));
+    // weights retain the given shape (d_in, d_out)
+    // bias retains the shape (d_out,)
+    let zeros = Tensor::<f64>::zeros((3, 4));
+    assert_eq!(zeros.dim(), (3, 4));
 }

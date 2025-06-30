@@ -1,12 +1,17 @@
 version: 2
+
 updates:
   - package-ecosystem: cargo
+    schedule:
+      interval: monthly
+    directories:
+      - /
+      - /ndtensor
+  - package-ecosystem: devcontainers
     directory: /
     schedule:
-      interval: daily
+      interval: monthly
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: daily
-  - package-ecosystem: cargo
-    directory: /ndtensor
+      interval: monthly
