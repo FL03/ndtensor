@@ -1,88 +1,207 @@
 [package]
+build = "build.rs"
+description = "An n-dimensional tensor"
+name = "ndtensor"
+
 authors.workspace = true
 categories.workspace = true
-description.workspace = true
 edition.workspace = true
 homepage.workspace = true
 keywords.workspace = true
 license.workspace = true
-name = "ndtensor"
 readme.workspace = true
 repository.workspace = true
+rust-version.workspace = true
 version.workspace = true
+
+[package.metadata.docs.rs]
+all-features = false
+features = ["full"]
+rustc-args = ["--cfg", "docsrs"]
+version = "v{{version}}"
+
+[package.metadata.release]
+no-dev-version = true
+tag-name = "{{version}}"
+
+[lib]
+crate-type = [
+    "cdylib",
+    "rlib",
+]
+bench = false
+doc = true
+doctest = true
+test = true
+
+[dependencies]
+# custom
+scsys = { workspace = true }
+scsys-derive = { workspace = true }
+# concurrency & parallelism
+rayon = { optional = true, workspace = true }
+# data structures
+ndarray = { workspace = true }
+# error-handling
+anyhow = { optional = true, workspace = true }
+thiserror = { workspace = true }
+# macros & utilities
+paste = { workspace = true }
+smart-default = { workspace = true }
+strum = { workspace = true }
+# mathematics
+approx = { optional = true, workspace = true }
+num = { workspace = true }
+num-complex = { optional = true, workspace = true }
+num-traits = { workspace = true }
+rustfft = { optional = true, workspace = true }
+# random
+getrandom = { default-features = false, optional = true, workspace = true }
+rand = { optional = true, workspace = true }
+rand_distr = { optional = true, workspace = true }
+# serialization
+serde = { features = ["derive"], optional = true, workspace = true }
+serde_derive = { optional = true, workspace = true }
+serde_json = { optional = true, workspace = true }
+# tracing
+tracing = { optional = true, workspace = true }
+
+[dev-dependencies]
+lazy_static = { workspace = true }
 
 [features]
 default = [
-    "approx",
     "std",
+]
+
+full = [
+    "default",
+    "anyhow",
+    "approx",
+    "complex",
+    "init",
+    "json",
+    "rand",
+    "serde",
+    "tracing",
+]
+
+nightly = []
+
+# ************* [FF:Features] *************
+json = [
+    "alloc",
+    "serde",
+    "serde_json",
+    "scsys/json",
+]
+
+signal =[
+    "complex",
+    "rustfft",
+]
+
+# ************* [FF:Dependencies] *************
+std = [
+    "alloc",
+    "anyhow?/std",
+    "ndarray/std",
+    "num/std",
+    "num-complex?/std",
+    "num-traits/std",
+    "rand?/std",
+    "rand?/std_rng",
+    "serde/std",
+    "scsys/std",
+    "strum/std",
+    "thiserror/std",
+    "tracing?/std",
+]
+
+wasi = [
+    "scsys/wasi",
+]
+
+wasm = [
+    "getrandom?/wasm_js",
+    "scsys/wasm",
+]
+# ************* [FF:Dependencies] *************
+alloc = [
+    "concision-init?/alloc",
+    "num/alloc",
+    "serde?/alloc",
+    "serde_json?/alloc",
+    "scsys/alloc",
+]
+
+anyhow = [
+    "dep:anyhow",
+    "scsys/anyhow",
 ]
 
 approx = [
     "dep:approx",
-    "ndarray/approx-0_5",
+    "ndarray/approx",
 ]
 
-std = [
-    "acme/std",
-    "ndarray/std"
+blas = [
+    "ndarray/blas",
 ]
+
+complex = [
+    "dep:num-complex",
+]
+
+rand = [
+    "dep:rand",
+    "dep:rand_distr",
+    "num/rand",
+    "num-complex?/rand",
+    "rng",
+    "scsys/rand",
+]
+
+rayon = [
+    "dep:rayon",
+    "ndarray/rayon",
+]
+
+rng = [
+    "dep:getrandom",
+    "rand?/small_rng",
+    "rand?/thread_rng",
+    "scsys/rng",
+]
+
+rustfft = ["dep:rustfft"]
 
 serde = [
     "dep:serde",
-    "serde-ext"
+    "dep:serde_derive",
+    "ndarray/serde",
+    "num/serde",
+    "num-complex?/serde",
+    "rand?/serde",
+    "rand_distr?/serde",
+    "scsys/serde",
 ]
 
-serde-ext = [
-    "dep:serde_json",
-    "ndarray/serde-1",
-    "acme/serde",
+serde_json = ["dep:serde_json"]
+
+tracing = [
+    "dep:tracing",
+    "scsys/tracing",
 ]
 
-[lib]
-bench = true
-crate-type = ["cdylib", "rlib"]
-doctest = true
-test = true
+[[bench]]
+name = "default"
+harness = false
 
+# ************* [Unit Tests] *************
 [[test]]
-name = "approx"
-required-features = ["approx"]
-
-[[test]]
-name = "backward"
-required-features = ["approx"]
+name = "default"
 
 [[test]]
 name = "tensor"
 required-features = ["approx", "std"]
-
-
-[build-dependencies]
-
-[dependencies]
-approx = { optional = true, version = "0.5" }
-itertools = "0.12"
-ndarray = "0.15"
-num = "0.4"
-paste = "1"
-serde = { features = ["derive"], optional = true, version = "1" }
-serde_json = { optional = true, version = "1" }
-smart-default = "0.7"
-strum = { features = ["derive"], version = "0.26"}
-
-[dependencies.acme]
-# path = "../acme/acme"
-
-version = "0.3.1"
-
-
-[dev-dependencies]
-lazy_static = "1"
-
-[package.metadata.docs.rs]
-all-features = true
-rustc-args = ["--cfg", "docsrs"]
-
-[target.wasm32-unknown-unknown]
-
-[target.wasm32-wasi]
