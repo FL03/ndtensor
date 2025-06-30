@@ -7,10 +7,10 @@ use core::borrow::{Borrow, BorrowMut};
 use core::ops::{Deref, DerefMut};
 use nd::*;
 
-pub struct TensorOp<S1, S2 = S1>(pub(crate) Option<TensorExpr<S1, S2>>)
+pub struct TensorOp<S, T = S>(pub(crate) Option<TensorExpr<S, T>>)
 where
-    S1: RawData,
-    S2: RawData;
+    S: RawData,
+    T: RawData;
 
 macro_rules! opmap {
     ($self:ident.$call:ident) => {

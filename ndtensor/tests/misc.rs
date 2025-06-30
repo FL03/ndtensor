@@ -2,8 +2,6 @@
     Appellation: misc <test>
     Contrib: FL03 <jo3mccain@icloud.com>
 */
-#![cfg(test)]
-
 extern crate ndtensor;
 
 use lazy_static::lazy_static;

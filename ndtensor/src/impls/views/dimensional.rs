@@ -21,16 +21,14 @@ where
     where
         S: Data<Elem = A>,
     {
-        let data = self.data.column(idx);
-        TensorBase::new(data, None, self.ctx.is_variable())
+        TensorBase::from_arr(self.as_ref().column(idx))
     }
 
     pub fn column_mut(&mut self, idx: Ix) -> TensorViewMut<'_, A, Ix1>
     where
         S: DataMut<Elem = A>,
     {
-        let data = self.data.column_mut(idx);
-        TensorBase::new(data, None, self.ctx.is_variable())
+        TensorBase::new(self.as_mut().column_mut(idx))
     }
 
     pub fn is_square(&self) -> bool {
@@ -49,15 +47,13 @@ where
     where
         S: Data<Elem = A>,
     {
-        let data = self.data.row(idx);
-        TensorBase::new(data, None, self.ctx.is_variable())
+        TensorBase::from_arr(self.data().row(idx))
     }
 
     pub fn row_mut(&mut self, idx: Ix) -> TensorViewMut<'_, A, Ix1>
     where
         S: DataMut<Elem = A>,
     {
-        let data = self.data.row_mut(idx);
-        TensorBase::new(data, None, self.ctx.is_variable())
+        TensorBase::new(self.as_mut().row_mut(idx))
     }
 }

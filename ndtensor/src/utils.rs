@@ -2,20 +2,21 @@
     Appellation: utils <module>
     Contrib: FL03 <jo3mccain@icloud.com>
 */
-use crate::prelude::{TensorExpr, TensorId};
-use crate::TensorBase;
-use nd::{Array, Dimension, IntoDimension, RawData, RawDataClone};
-use num::Float;
-use std::collections::HashMap;
+use crate::error::InverseError;
+use nd::ScalarOperand;
+use nd::prelude::*;
+use num::traits::{Float, NumAssign};
 
 /// Hashes a dimension using the [DefaultHasher].
 #[cfg(feature = "std")]
-pub fn hash_dim<D>(dim: impl IntoDimension<Dim = D>) -> u64
+pub fn hash_dim<D, Sh>(shape: Sh) -> u64
 where
     D: Dimension,
+    Sh: ShapeBuilder<Dim = D>,
 {
     use std::hash::{DefaultHasher, Hash, Hasher};
-    let dim = dim.into_dimension();
+    let shape = shape.into_shape();
+    let dim = shape.raw_dim().clone();
     let mut s = DefaultHasher::new();
     for i in dim.slice() {
         i.hash(&mut s);
@@ -23,12 +24,16 @@ where
     s.finish()
 }
 
-pub fn linarr<A, D>(dim: impl IntoDimension<Dim = D>) -> Array<A, D>
+/// Generates a new [Array] using evenly spaced values between [0, n-1);
+/// where n is the product of the dimensions.
+pub fn linarr<A, D, Sh>(shape: Sh) -> Array<A, D>
 where
     A: Float,
     D: Dimension,
+    Sh: ShapeBuilder<Dim = D>,
 {
-    let dim = dim.into_dimension();
+    let shape = shape.into_shape();
+    let dim = shape.raw_dim().clone();
     let dview = dim.as_array_view();
     let n = dview.product();
     Array::linspace(A::zero(), A::from(n).unwrap() - A::one(), n)
@@ -36,46 +41,48 @@ where
         .expect("linspace err")
 }
 
-pub(crate) fn walk<S>(
-    scope: TensorBase<S>,
-    nodes: Vec<TensorBase<S>>,
-    visited: &mut HashMap<TensorId, bool>,
-) -> (bool, Vec<TensorBase<S>>)
+
+
+pub fn inverse<T>(matrix: &Array2<T>) -> Result<Array2<T>, InverseError>
 where
-    S: RawData + RawDataClone,
+    T: Copy + NumAssign + ScalarOperand,
 {
-    if let Some(&tg) = visited.get(scope.id()) {
-        return (tg, nodes);
+    let (rows, cols) = matrix.dim();
+
+    if !matrix.is_square() {
+        return Err(InverseError::NonSquareMatrix); // Matrix must be square for inversion
     }
-    // track the gradient of the current node
-    let mut track = false;
-    // recursively call on the children nodes
-    let mut nodes = if scope.is_variable() {
-        // Do not call recursively on the "leaf" nodes.
-        track = true;
-        nodes
-    } else if let Some(op) = scope.op() {
-        match op {
-            TensorExpr::Binary { lhs, rhs, .. } => {
-                let (tg, nodes) = walk(*lhs.clone(), nodes, visited);
-                track |= tg;
-                let (tg, nodes) = walk(*rhs.clone(), nodes, visited);
-                track |= tg;
-                nodes
-            }
-            TensorExpr::Unary { recv, .. } => {
-                let (tg, nodes) = walk(*recv.clone(), nodes, visited);
-                track |= tg;
-                nodes
-            }
-            _ => nodes,
+
+    let identity = Array2::eye(rows);
+
+    // Construct an augmented matrix by concatenating the original matrix with an identity matrix
+    let mut aug = Array2::zeros((rows, 2 * cols));
+    aug.slice_mut(s![.., ..cols]).assign(matrix);
+    aug.slice_mut(s![.., cols..]).assign(&identity);
+
+    // Perform Gaussian elimination to reduce the left half to the identity matrix
+    for i in 0..rows {
+        let pivot = aug[[i, i]];
+
+        if pivot == T::zero() {
+            return Err(InverseError::SingularMatrix); // Matrix is singular
         }
-    } else {
-        nodes
-    };
-    visited.insert(*scope.id(), track);
-    if track {
-        nodes.push(scope);
+
+        aug.slice_mut(s![i, ..]).mapv_inplace(|x| x / pivot);
+
+        for j in 0..rows {
+            if i != j {
+                let am = aug.clone();
+                let factor = aug[[j, i]];
+                let rhs = am.slice(s![i, ..]);
+                aug.slice_mut(s![j, ..])
+                    .zip_mut_with(&rhs, |x, &y| *x -= y * factor);
+            }
+        }
     }
-    (track, nodes)
+
+    // Extract the inverted matrix from the augmented matrix
+    let inverted = aug.slice(s![.., cols..]);
+
+    Ok(inverted.to_owned())
 }
