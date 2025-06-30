@@ -24,10 +24,10 @@ license = "Apache-2.0"
 readme = "README.md"
 repository = "https://github.com/FL03/ndtensor.git"
 rust-version = "1.85.0"
-version = "0.1.1"
+version = "0.1.2"
 
 [workspace.dependencies]
-ndtensor = { default-features = false, path = "ndtensor", version = "0.1.1" }
+ndtensor = { default-features = false, path = "ndtensor", version = "0.1.2" }
 
 # custom
 scsys = { default-features = false, features = ["derive"], version = "0.3.1" }
