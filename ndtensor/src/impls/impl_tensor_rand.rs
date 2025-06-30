@@ -22,7 +22,7 @@ where
         use rand::{SeedableRng, rngs::SmallRng};
         Self::random_using(shape, distr, &mut SmallRng::from_rng(&mut rand::rng()))
     }
-    /// randomly initializes a tensor with the given shape using the provided distribution and 
+    /// randomly initializes a tensor with the given shape using the provided distribution and
     /// random number generator
     pub fn random_using<Sh, Ds, R>(shape: Sh, distr: Ds, rng: &mut R) -> Self
     where
