@@ -20,11 +20,11 @@ where
         Sh: ShapeBuilder<Dim = D>,
     {
         use rand::{SeedableRng, rngs::SmallRng};
-        Self::random_with(shape, distr, &mut SmallRng::from_rng(&mut rand::rng()))
+        Self::random_using(shape, distr, &mut SmallRng::from_rng(&mut rand::rng()))
     }
-    /// generates a randomly initialized set of parameters with the given shape using the
-    /// output of the given distribution
-    pub fn random_with<Sh, Ds, R>(shape: Sh, distr: Ds, rng: &mut R) -> Self
+    /// randomly initializes a tensor with the given shape using the provided distribution and 
+    /// random number generator
+    pub fn random_using<Sh, Ds, R>(shape: Sh, distr: Ds, rng: &mut R) -> Self
     where
         R: RngCore + ?Sized,
         Ds: Distribution<A>,
@@ -32,14 +32,13 @@ where
     {
         Self::from_shape_fn(shape, |_| distr.sample(rng))
     }
-    /// generates a randomly initialized set of parameters with the given shape using the
-    /// output of the given distribution
-    pub fn init_rand<Dst, Sh>(shape: Sh, distr: Dst) -> Self
+    /// Randomly initializes a tensor with the given shape using the provided distribution
+    pub fn random_with<Dst, Sh>(shape: Sh, distr: Dst) -> Self
     where
         S: DataOwned,
         Sh: ShapeBuilder<Dim = D>,
         Dst: Clone + Distribution<A>,
     {
-        Self::random_with(shape, distr, &mut rand::rng())
+        Self::random_using(shape, distr, &mut rand::rng())
     }
 }
