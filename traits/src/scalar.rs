@@ -74,7 +74,7 @@ where
 #[cfg(feature = "complex")]
 pub trait ScalarComplex
 where
-    Self::Complex<Self::Real>: num::complex::ComplexFloat,
+    Self::Complex<Self::Real>: num_complex::ComplexFloat,
 {
     type Real: num_traits::real::Real;
     type Complex<T>;
@@ -101,7 +101,7 @@ where
 #[cfg(feature = "complex")]
 impl<U> ScalarComplex for U
 where
-    U: num::complex::ComplexFloat,
+    U: num_complex::ComplexFloat,
     U::Real: Scalar,
 {
     type Real = U::Real;

@@ -4,10 +4,9 @@
 */
 use crate::scalar::Scalar;
 use ndarray::{
-    ArrayBase, Axis, DataMut, DataOwned, Dimension, OwnedRepr, RawData, RemoveAxis, ShapeBuilder,
+    ArrayBase, DataMut, DataOwned, Dimension, OwnedRepr, RawData, ShapeBuilder
 };
-use num::Signed;
-use num_traits::{One, Zero};
+use num_traits::{One, Signed, Zero};
 
 /// The [`RawTensor`] trait defines the base interface for all tensors,
 pub trait RawTensor<A, D> {
@@ -15,7 +14,11 @@ pub trait RawTensor<A, D> {
     type Container<U: RawData, V: Dimension>;
 
     private!();
+
+    fn len(&self) -> usize;
 }
+
+pub trait TensorIter<'a, A: 'a, D: Dimension>: Iterator<Item = &'a A> {}
 /// The [`Tensor`] trait extends the [`RawTensor`] trait to provide additional functionality
 /// for tensors, such as creating tensors from shapes, applying functions, and iterating over
 /// elements. It is generic over the element type `A` and the dimension type `D
@@ -82,22 +85,12 @@ where
         Self::Repr: DataMut,
         F: FnMut(A) -> A;
 
-    fn axis_iter(&self, axis: usize) -> ndarray::iter::AxisIter<'_, A, D::Smaller>
-    where
-        D: RemoveAxis;
-
-    fn iter(&self) -> ndarray::iter::Iter<'_, A, D>;
-
-    fn iter_mut(&mut self) -> ndarray::iter::IterMut<'_, A, D>
-    where
-        Self::Repr: DataMut;
-
     fn mean(&self) -> A
     where
         A: Scalar,
     {
         let sum = self.sum();
-        let count = self.iter().count();
+        let count = self.len();
         sum / A::from_usize(count).unwrap()
     }
     #[doc(hidden)]
@@ -109,10 +102,7 @@ where
 
     fn sum(&self) -> A
     where
-        A: Clone + core::iter::Sum,
-    {
-        self.iter().cloned().sum()
-    }
+        A: Clone + core::iter::Sum;
 
     fn pow2(&self) -> Self::Container<OwnedRepr<A>, D>
     where
@@ -144,13 +134,16 @@ where
 impl<A, S, D> RawTensor<A, D> for ArrayBase<S, D>
 where
     S: RawData<Elem = A>,
-    A: Scalar,
     D: Dimension,
 {
     type Repr = S;
     type Container<U: RawData, V: Dimension> = ArrayBase<U, V>;
 
     seal!();
+
+    fn len(&self) -> usize {
+        self.len()
+    }
 }
 
 impl<A, S, D> NdTensor<A, D> for ArrayBase<S, D>
@@ -196,6 +189,13 @@ where
         self.shape()
     }
 
+    fn sum(&self) -> A
+    where
+        A: Clone + core::iter::Sum,
+    {
+        self.iter().cloned().sum()
+    }
+
     fn apply<F, B>(&self, f: F) -> Self::Container<OwnedRepr<B>, D>
     where
         F: FnMut(A) -> B,
@@ -210,20 +210,5 @@ where
     {
         self.mapv_inplace(f)
     }
-
-    fn iter(&self) -> ndarray::iter::Iter<'_, A, D> {
-        self.iter()
-    }
-    fn iter_mut(&mut self) -> ndarray::iter::IterMut<'_, A, D>
-    where
-        S: DataMut,
-    {
-        self.iter_mut()
-    }
-    fn axis_iter(&self, axis: usize) -> ndarray::iter::AxisIter<'_, A, D::Smaller>
-    where
-        D: RemoveAxis,
-    {
-        self.axis_iter(Axis(axis))
-    }
 }
+

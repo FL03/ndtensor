@@ -73,7 +73,10 @@ where
         self.store().raw_dim()
     }
     /// returns the shape of the tensor
-    pub fn shape(&self) -> &[usize] {
+    pub fn shape<'a>(&'a self) -> &'a [usize]
+    where
+        A: 'a,
+    {
         self.store().shape()
     }
     /// returns a reference to the element at the given index, if any

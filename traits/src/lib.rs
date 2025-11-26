@@ -8,9 +8,18 @@
 
 pub use self::{ops::*, raw_tensor::*, scalar::*};
 
+#[macro_use]
+pub(crate) mod macros {
+    #[macro_use]
+    pub mod seal;
+}
+
 pub mod ops;
 pub mod raw_tensor;
 pub mod scalar;
+
+
+
 
 #[doc(hidden)]
 pub mod prelude {

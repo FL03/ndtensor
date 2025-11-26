@@ -133,7 +133,7 @@ macro_rules! impl_binary {
     (@impl $trait:ident::$method:ident) => {
         impl<A, B, C, S, D, S2, D2> ::core::ops::$trait<TensorBase<S2, D2>> for TensorBase<S, D>
         where
-            A: ScalarOperand + ::core::ops::$trait<B, Output = C>,
+            A: Clone + ::core::ops::$trait<B, Output = C>,
             D: Dimension + DimMax<D2>,
             D2: Dimension,
             S: Data<Elem = A>,
@@ -151,7 +151,8 @@ macro_rules! impl_binary {
 
         impl<'a, A, S, D, B, S2, D2, C> ::core::ops::$trait<&'a TensorBase<S2, D2>> for TensorBase<S, D>
         where
-            A: ScalarOperand + ::core::ops::$trait<B, Output = C>,
+            A: 'a + Clone + ::core::ops::$trait<B, Output = C>,
+            B: 'a,
             D: Dimension + DimMax<D2>,
             D2: Dimension,
             S: Data<Elem = A>,
@@ -169,7 +170,8 @@ macro_rules! impl_binary {
 
         impl<'a, A, S, D, B, S2, D2, C> ::core::ops::$trait<&'a mut TensorBase<S2, D2>> for TensorBase<S, D>
         where
-            A: ScalarOperand + ::core::ops::$trait<B, Output = C>,
+            A: 'a + Clone + ::core::ops::$trait<B, Output = C>,
+            B: 'a,
             D: Dimension + DimMax<D2>,
             D2: Dimension,
             S: Data<Elem = A>,
@@ -187,7 +189,8 @@ macro_rules! impl_binary {
 
         impl<'a, A, S, D, B, S2, D2, C> ::core::ops::$trait<&'a TensorBase<S2, D2>> for &'a TensorBase<S, D>
         where
-            A: ScalarOperand + ::core::ops::$trait<B, Output = C>,
+            A: 'a + Clone + ::core::ops::$trait<B, Output = C>,
+            B: 'a,
             D: Dimension + DimMax<D2>,
             D2: Dimension,
             S: Data<Elem = A>,
@@ -205,7 +208,7 @@ macro_rules! impl_binary {
 
         impl<'a, A, S, D, B, S2, D2, C> ::core::ops::$trait<TensorBase<S2, D2>> for &'a TensorBase<S, D>
         where
-            A: ScalarOperand + ::core::ops::$trait<B, Output = C>,
+            A: 'a + Clone + ::core::ops::$trait<B, Output = C>,
             D: Dimension + DimMax<D2>,
             D2: Dimension,
             S: Data<Elem = A>,
@@ -223,7 +226,7 @@ macro_rules! impl_binary {
 
         impl<'a, A, S, D, B, S2, D2, C> ::core::ops::$trait<TensorBase<S2, D2>> for &'a mut TensorBase<S, D>
         where
-            A: ScalarOperand + ::core::ops::$trait<B, Output = C>,
+            A: 'a + Clone + ::core::ops::$trait<B, Output = C>,
             D: Dimension + DimMax<D2>,
             D2: Dimension,
             S: Data<Elem = A>,
@@ -256,7 +259,7 @@ macro_rules! impl_binary_assign {
     (@impl $trait:ident::$method:ident) => {
         impl<A, B, S, D, S2, D2> ::core::ops::$trait<TensorBase<S2, D2>> for TensorBase<S, D>
         where
-            A: ScalarOperand + ::core::ops::$trait<B>,
+            A: Clone + ::core::ops::$trait<B>,
             D: Dimension + DimMax<D2>,
             D2: Dimension,
             S: Data<Elem = A>,
@@ -271,7 +274,8 @@ macro_rules! impl_binary_assign {
 
         impl<'a, A, B, S, D, S2, D2> ::core::ops::$trait<&'a TensorBase<S2, D2>> for TensorBase<S, D>
         where
-            A: ScalarOperand + ::core::ops::$trait<B>,
+            A: 'a + Clone + ::core::ops::$trait<B>,
+            B: 'a,
             D: Dimension + DimMax<D2>,
             D2: Dimension,
             S: Data<Elem = A>,
