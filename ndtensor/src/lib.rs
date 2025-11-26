@@ -31,10 +31,7 @@
 
 #[cfg(not(all(feature = "std", feature = "alloc")))]
 compiler_error! {
-    "\
-        Either the `std` or `alloc` feature must be enabled. 
-        Please enable one of them in your Cargo.toml file.
-    "
+    "Either the `std` or `alloc` feature must be enabled for this crate to complie."
 }
 
 #[macro_use]
@@ -47,7 +44,12 @@ pub(crate) mod macros {
 extern crate alloc;
 
 #[doc(inline)]
-pub use self::{error::*, tensor::*, traits::*, types::*};
+pub use ndtensor_traits as traits;
+#[doc(inline)]
+pub use ndtensor_traits::prelude::*;
+
+#[doc(inline)]
+pub use self::{error::*, tensor::*, types::*};
 
 /// this module defines the [`TensorError`] enum for handling tensor-related errors
 pub mod error;
@@ -70,25 +72,6 @@ mod impls {
     mod impl_tensor_serde;
 }
 
-mod traits {
-    //! this module provides additional traits for the `tensor` module
-    #[doc(inline)]
-    pub use self::prelude::*;
-
-    mod ops;
-    mod raw_tensor;
-    mod scalar;
-
-    mod prelude {
-        #[doc(inline)]
-        pub use super::ops::*;
-        #[doc(inline)]
-        pub use super::raw_tensor::*;
-        #[doc(inline)]
-        pub use super::scalar::*;
-    }
-}
-
 mod types {
     //! this module defines various type aliases and primitives used by the `tensor` module
     #[doc(inline)]
@@ -105,9 +88,10 @@ mod types {
 #[doc(hidden)]
 pub mod prelude {
     #[doc(inline)]
-    pub use super::tensor::*;
+    pub use ndtensor_traits::prelude::*;
+
     #[doc(inline)]
-    pub use super::traits::*;
+    pub use super::tensor::*;
     #[doc(inline)]
     pub use super::types::*;
 }

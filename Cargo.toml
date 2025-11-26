@@ -3,7 +3,8 @@ default-members = [
     "ndtensor"
 ]
 members = [
-    "ndtensor",
+    "ndtensor", 
+    "traits",
 ]
 resolver = "3"
 
@@ -28,19 +29,20 @@ version = "0.1.2"
 
 [workspace.dependencies]
 ndtensor = { default-features = false, path = "ndtensor", version = "0.1.2" }
+ndtensor-traits = { default-features = false, path = "traits", version = "0.1.2" }
 
 # custom
-scsys = { default-features = false, features = ["derive"], version = "0.3.1" }
-scsys-derive = { default-features = false, version = "0.3.1" }
+scsys = { default-features = false, features = ["derive"], version = "0.3.2" }
+scsys-derive = { default-features = false, version = "0.3.2" }
 # benchmarking
-criterion = { version = "0.6" }
+criterion = { version = "0.7" }
 # concurrency & parallelism
 # crossbeam = { default-features = false, version = "0.8" }
 rayon = { default-features = false, version = "1" }
 rayon-core = { default-features = false, version = "1" }
 # data-structures
-ndarray = { default-features = false, version = "0.16" }
-ndarray-linalg = { default-features = false, version = "0.17" }
+ndarray = { default-features = false, version = "0.17" }
+ndarray-linalg = { default-features = false, version = "0.18" }
 ndarray-stats = "0.6"
 # serialization
 serde = { default-features = false, features = ["derive"], version = "1" }

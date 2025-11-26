@@ -2,7 +2,7 @@
     Appellation: tensor <module>
     Contrib: @FL03
 */
-use super::Scalar;
+use crate::scalar::Scalar;
 use ndarray::{
     ArrayBase, Axis, DataMut, DataOwned, Dimension, OwnedRepr, RawData, RemoveAxis, ShapeBuilder,
 };
@@ -100,6 +100,7 @@ where
         let count = self.iter().count();
         sum / A::from_usize(count).unwrap()
     }
+    #[doc(hidden)]
     /// sets the data of the object and returns a mutable reference to the object
     fn set_data(&mut self, data: Self::Container<Self::Repr, D>) -> &mut Self {
         *self.data_mut() = data;
