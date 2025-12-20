@@ -11,6 +11,11 @@ on:
   push:
     branches: [main, master]
     tags: [v*.*.*, "*-nightly"]
+    paths:
+      - '**.rs'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - '.github/workflows/cargo-clippy.yml'
   release:
     types: [created, edited]
   repository_dispatch:

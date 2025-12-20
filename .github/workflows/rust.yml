@@ -11,10 +11,15 @@ env:
 on:
   pull_request:
     branches: [main, master]
-    types: [ opened, reopened ]
+    types: [opened, reopened, synchronize]
   push:
     branches: [main, master]
     tags: [v*.*.*, "*-nightly"]
+    paths:
+      - '**.rs'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - '.github/workflows/rust.yml'
   release:
     types: [created, edited]
   repository_dispatch:
