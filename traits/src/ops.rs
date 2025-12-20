@@ -135,7 +135,7 @@ where
 
 impl<T> MatMul<Vec<T>> for Vec<T>
 where
-    T: Copy + num::Num,
+    T: Copy + Num,
 {
     type Output = T;
 
@@ -148,7 +148,7 @@ where
 
 impl<T, const N: usize> MatMul<[T; N]> for [T; N]
 where
-    T: Copy + num::Num,
+    T: Copy + Num,
 {
     type Output = T;
 

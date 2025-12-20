@@ -19,9 +19,6 @@ pub(crate) type Result<T> = core::result::Result<T, TensorError>;
 pub enum TensorError {
     #[error(transparent)]
     ShapeError(#[from] ndarray::ShapeError),
-    #[cfg(feature = "anyhow")]
-    #[error(transparent)]
-    AnyError(#[from] anyhow::Error),
     #[cfg(feature = "alloc")]
     #[error(transparent)]
     BoxError(#[from] Box<dyn core::error::Error + Send + Sync>),
