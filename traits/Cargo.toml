@@ -2,6 +2,7 @@
 build = "build.rs"
 description = "Traits for n-dimensional tensor"
 name = "ndtensor-traits"
+
 authors.workspace = true
 categories.workspace = true
 edition.workspace = true
@@ -13,25 +14,6 @@ repository.workspace = true
 rust-version.workspace = true
 version.workspace = true
 
-[lib]
-crate-type = [
-    "cdylib",
-    "rlib",
-]
-bench = false
-doc = true
-doctest = true
-test = true
-
-# ************* [Unit Tests] *************
-[[test]]
-name = "default"
-
-[[test]]
-name = "ndtensor"
-required-features = ["approx", "std"]
-
-# ********* [Metadata] *********
 [package.metadata.docs.rs]
 all-features = false
 features = ["full"]
@@ -41,6 +23,16 @@ version = "v{{version}}"
 [package.metadata.release]
 no-dev-version = true
 tag-name = "{{version}}"
+
+[lib]
+crate-type = ["cdylib", "rlib", "staticlib"]
+bench = false
+doctest = true
+test = true
+
+[[test]]
+name = "ndtensor"
+required-features = ["approx", "std"]
 
 [dependencies]
 ndarray = { workspace = true }
@@ -55,62 +47,59 @@ getrandom = { default-features = false, optional = true, workspace = true }
 rand = { optional = true, workspace = true }
 rand_distr = { optional = true, workspace = true }
 
-[dev-dependencies]
-lazy_static = { workspace = true }
-
 [features]
-default = [
-    "std",
-]
+default = ["std"]
 
 full = [
-    "default",
-    "approx",
-    "complex",
-    "rand",
+  "default",
+  "approx",
+  "complex",
+  "rand",
 ]
 
 nightly = []
 
 # ************* [FF:Dependencies] *************
 std = [
-    "alloc",
-    "approx?/std",
-    "ndarray/std",
-    "num-complex?/std",
-    "num-traits/std",
-    "rand?/std",
-    "rand?/std_rng",
+  "alloc",
+  "approx?/std",
+  "ndarray/std",
+  "num-complex?/std",
+  "num-traits/std",
+  "rand?/std",
+  "rand?/std_rng",
 ]
 
 wasi = []
 
 wasm = [
-    "getrandom?/wasm_js",
+  "getrandom?/wasm_js",
 ]
+
 # ************* [FF:Dependencies] *************
+
 alloc = []
 
 approx = [
-    "dep:approx",
-    "ndarray/approx",
+  "dep:approx",
+  "ndarray/approx",
 ]
 
 blas = [
-    "ndarray/blas",
+  "ndarray/blas",
 ]
 
 complex = ["dep:num-complex"]
 
 rand = [
-    "dep:rand",
-    "dep:rand_distr",
-    "num-complex?/rand",
-    "rng",
+  "dep:rand",
+  "dep:rand_distr",
+  "num-complex?/rand",
+  "rng",
 ]
 
 rng = [
-    "dep:getrandom",
-    "rand?/small_rng",
-    "rand?/thread_rng",
+  "dep:getrandom",
+  "rand?/small_rng",
+  "rand?/thread_rng",
 ]

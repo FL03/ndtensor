@@ -3,7 +3,7 @@
     Created At: 2025.11.25:19:38:57
     Contrib: @FL03
 */
-use ndtensor_traits::NdTensor;
+use ndtensor_traits::NdTensorExt;
 
 use ndarray::Array2;
 
